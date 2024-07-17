@@ -16,6 +16,7 @@ import {
   OPERATION_COMMANDS,
   SYSTEM_COMMANDS
 } from './common/constants/commands.constant';
+import { dateTimeToStr } from './common/utils/lib.utils';
 
 @Injectable()
 export class AppService {
@@ -267,6 +268,8 @@ export class AppService {
   }
 
   private async handlerCommandHelp(ctx: TContext) {
+    const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
+
     const message = [
       `👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!`,
       '\n\n',
@@ -274,10 +277,15 @@ export class AppService {
       '\n\n',
       `${MAIN_COMMANDS.commands.map(item => `/${item.command} - ${item.description}`).join('\n')}\n\n`,
       `<b><i>${OPERATION_COMMANDS.description}</i></b>\n`,
-      `${OPERATION_COMMANDS.commands.map(item => `/${item.command} - ${item.description}`).join('\n')}\n\n`,
-      `<b><i>${SYSTEM_COMMANDS.description}</i></b>\n`,
-      `${SYSTEM_COMMANDS.commands.map(item => `/${item.command} - ${item.description}`).join('\n')}`
+      `${OPERATION_COMMANDS.commands.map(item => `/${item.command} - ${item.description}`).join('\n')}\n\n`
     ];
+
+    if (user?.isAdmin) {
+      message.push(`<b><i>${SYSTEM_COMMANDS.description}</i></b>\n`);
+      message.push(
+        `${SYSTEM_COMMANDS.commands.map(item => `/${item.command} - ${item.description}`).join('\n')}`
+      );
+    }
 
     await ctx.replyWithHTML(message.join(''), {
       link_preview_options: { is_disabled: true },
@@ -472,12 +480,14 @@ export class AppService {
       });
     }
 
-    message.push(`🪧 ${petition?.tag}\n\n`);
+    message.push(`📄 ${petition?.tag}\n\n`);
     message.push(`<b>${petition?.title}</b>\n\n`);
     message.push(`Номер петиції: <b>${petition?.number}</b>\n`);
-    message.push(`${petition?.date}\n`);
-    message.push(`Статус: ${petition?.status}\n`);
-    message.push(`Кількість голосів: ${petition?.counts}\n`);
+    message.push(`Статус: <b>${petition?.status}</b>\n`);
+    message.push(`Кількість голосів: <b>${petition?.counts}</b>\n`);
+    message.push(`${petition?.date}\n\n`);
+
+    message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
 
     await ctx.replyWithHTML(message.join(''), {
       link_preview_options: { is_disabled: true },
