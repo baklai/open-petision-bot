@@ -487,6 +487,8 @@ export class AppService {
   private async handlerCommandStatistic(ctx: TContext) {
     const usersCount = await this.userModel.countDocuments();
 
+    const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
+
     const petitionsCount = await this.petitionModel.aggregate([
       {
         $group: {
@@ -506,11 +508,11 @@ export class AppService {
     const message = [
       `👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!`,
       '\n\n',
-      '📊 <b>Статистика додатку:</b>\n',
-      '\n',
-      `<i> 😀 Кількість користувачів: ${usersCount}</i>`,
+      '📊 <b>Статистика додатку:</b>\n\n',
+      user?.isAdmin ? `ℹ️ <b>Кількість користувачів: ${usersCount}</b>\n\n` : '',
+      `⭐️ <b>Обрані Петиції:</b> ${user?.petitions?.length || 0}`,
       '\n\n',
-      `🔖 <b>Петиції по тегам:</b>\n`,
+      `🔖 <b>Петиції за темами:</b>\n`,
       '\n',
       ...petitionsCount.map(
         (item: any) => `<i> 🔸 ${item.tag?.replaceAll('#', '')}: ${item.count}</i>\n`
