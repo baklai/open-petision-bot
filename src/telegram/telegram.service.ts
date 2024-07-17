@@ -29,7 +29,7 @@ export class TelegramService {
     this.bot.telegram.setMyCommands(commands);
   }
 
-  async setBotCommand(command: string, handler: Function) {
+  async setBotCommand(command: string, handler: (ctx: TContext) => void) {
     this.bot.command(command, ctx => handler(ctx));
   }
 
@@ -37,11 +37,11 @@ export class TelegramService {
     return await this.bot.telegram.sendMessage(userID, message);
   }
 
-  async setOnMessage(handler: Function) {
+  async setOnMessage(handler: (ctx: TContext) => void) {
     this.bot.on('message', ctx => handler(ctx));
   }
 
-  async setOnСallbackQuery(handler: Function) {
+  async setOnСallbackQuery(handler: (ctx: TContext) => void) {
     this.bot.on('callback_query', ctx => handler(ctx));
   }
 
