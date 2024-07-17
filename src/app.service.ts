@@ -35,14 +35,14 @@ export class AppService {
     this.telegramService.setBotCommand('start', (ctx: TContext) => this.handlerCommandStart(ctx));
     this.telegramService.setBotCommand('help', (ctx: TContext) => this.handlerCommandHelp(ctx));
     this.telegramService.setBotCommand('about', (ctx: TContext) => this.handlerCommandAbout(ctx));
-    this.telegramService.setBotCommand('petition', (ctx: TContext) =>
-      this.handlerCommandPetition(ctx)
-    );
     this.telegramService.setBotCommand('quit', (ctx: TContext) => this.handlerCommandQuit(ctx));
     this.telegramService.setBotCommand('notice', (ctx: any) => this.handlerCommandNotice(ctx));
     this.telegramService.setBotCommand('admin', (ctx: any) => this.handlerCommandAdmin(ctx));
     this.telegramService.setBotCommand('update', (ctx: any) => this.handlerCommandUpdate(ctx));
     this.telegramService.setBotCommand('donate', (ctx: TContext) => this.handlerCommandDonate(ctx));
+    this.telegramService.setBotCommand('petition', (ctx: TContext) =>
+      this.handlerCommandPetition(ctx)
+    );
     this.telegramService.setBotCommand('statistic', (ctx: TContext) =>
       this.handlerCommandStatistic(ctx)
     );
@@ -50,6 +50,7 @@ export class AppService {
     this.initSceneAdmin('admin');
     this.initSceneNotice('notice');
     this.initSceneUpdate('update');
+    this.initScenePetition('petition');
 
     this.telegramService.setOnMessage((ctx: any) => this.onMessage(ctx));
 
@@ -65,9 +66,9 @@ export class AppService {
   }
 
   private async onMessage(ctx: any) {
-    if (ctx?.update?.message?.text === '❓ Help') {
+    if (ctx?.update?.message?.text === '❓ Довідка') {
       return await this.handlerCommandHelp(ctx);
-    } else if (ctx?.update?.message?.text === '💸 Donate') {
+    } else if (ctx?.update?.message?.text === '💸 Донат') {
       return await this.handlerCommandDonate(ctx);
     } else if (ctx?.update?.message?.text === '⭐️ Обрані петиції') {
       return await this.handlerSelectedPetition(ctx);
@@ -237,6 +238,74 @@ export class AppService {
     this.telegramService.registerBotScene(scene);
   }
 
+  private async initScenePetition(name: string) {
+    const scene = new Scenes.BaseScene<any>(name);
+    scene.enter(async ctx => {
+      const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
+
+      if (!user || !user?.isAdmin) {
+        ctx.replyWithHTML('💢 <b>Упс!</b> У вас недостатньо повноважень!');
+        return ctx.scene.leave();
+      }
+
+      const message = [
+        `👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!`,
+        '\n\n',
+        '👌 Добре, давайте оновимо перелік петицій!\n\n',
+        '👉 Будь ласка, оберіть статус петиції зі списку.'
+      ];
+
+      ctx.replyWithHTML(message.join(''), {
+        link_preview_options: { is_disabled: true },
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'ТРИВАЄ ЗБІР ПІДПИСІВ', callback_data: 'update:petition:active' }],
+            [{ text: 'НА РОЗГЛЯДІ', callback_data: 'update:petition:inprocess' }],
+            [{ text: 'З ВІДПОВІДДЮ', callback_data: 'update:petition:processed' }]
+          ]
+        }
+      });
+    });
+
+    scene.on<any>('callback_query', async (ctx: any) => {
+      ctx.session.callbackdata = ctx.callbackQuery.data;
+
+      const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
+
+      if (!user || !user?.isAdmin) {
+        ctx.replyWithHTML('💢 <b>Упс!</b> У вас недостатньо повноважень!');
+        return ctx.scene.leave();
+      }
+
+      switch (ctx.session.callbackdata) {
+        case 'update:petition:active':
+          this.scrapersService.handlePetitionScrape({ status: 'active' });
+          await ctx.replyWithHTML(
+            `👌 Добре, запущено оновлення переліку петицій! Це може зайняти деякий час!`
+          );
+          break;
+        case 'update:petition:inprocess':
+          this.scrapersService.handlePetitionScrape({ status: 'in_process' });
+          await ctx.replyWithHTML(
+            `👌 Добре, запущено оновлення переліку петицій! Це може зайняти деякий час!`
+          );
+          break;
+        case 'update:petition:processed':
+          this.scrapersService.handlePetitionScrape({ status: 'processed' });
+          await ctx.replyWithHTML(
+            `👌 Добре, запущено оновлення переліку петицій! Це може зайняти деякий час!`
+          );
+          break;
+        default:
+          await ctx.replyWithHTML('💢 <b>Упс!</b> Щось пішло не так!', {});
+      }
+
+      ctx.scene.leave();
+    });
+
+    this.telegramService.registerBotScene(scene);
+  }
+
   private async handlerCommandStart(ctx: TContext) {
     const message = [
       `👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!`,
@@ -252,7 +321,7 @@ export class AppService {
       link_preview_options: { is_disabled: true },
       reply_markup: {
         resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Help' }, { text: '💸 Donate' }]]
+        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
       }
     });
 
@@ -291,7 +360,7 @@ export class AppService {
       link_preview_options: { is_disabled: true },
       reply_markup: {
         resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Help' }, { text: '💸 Donate' }]]
+        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
       }
     });
   }
@@ -309,7 +378,7 @@ export class AppService {
       link_preview_options: { is_disabled: true },
       reply_markup: {
         resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Help' }, { text: '💸 Donate' }]]
+        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
       }
     });
   }
@@ -409,7 +478,7 @@ export class AppService {
       link_preview_options: { is_disabled: true },
       reply_markup: {
         inline_keyboard: [
-          [{ text: '💸 DONATE FOR BOT', url: this.configService.get<string>('DONATE') }]
+          [{ text: '💸 ДОНАТ НА РОЗВИТОК', url: this.configService.get<string>('DONATE') }]
         ]
       }
     });
@@ -454,7 +523,7 @@ export class AppService {
       link_preview_options: { is_disabled: true },
       reply_markup: {
         resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Help' }, { text: '💸 Donate' }]]
+        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
       }
     });
   }
@@ -475,7 +544,10 @@ export class AppService {
         link_preview_options: { is_disabled: true },
         reply_markup: {
           resize_keyboard: true,
-          keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Help' }, { text: '💸 Donate' }]]
+          keyboard: [
+            [{ text: '⭐️ Обрані петиції' }],
+            [{ text: '❓ Довідка' }, { text: '💸 Донат' }]
+          ]
         }
       });
     }
@@ -521,7 +593,10 @@ export class AppService {
         link_preview_options: { is_disabled: true },
         reply_markup: {
           resize_keyboard: true,
-          keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Help' }, { text: '💸 Donate' }]]
+          keyboard: [
+            [{ text: '⭐️ Обрані петиції' }],
+            [{ text: '❓ Довідка' }, { text: '💸 Донат' }]
+          ]
         }
       });
     }
@@ -553,7 +628,7 @@ export class AppService {
       link_preview_options: { is_disabled: true },
       reply_markup: {
         resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Help' }, { text: '💸 Donate' }]]
+        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
       }
     });
   }
