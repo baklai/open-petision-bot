@@ -52,7 +52,7 @@ export class User {
 
   @IsArray()
   @IsOptional()
-  @Prop({ type: Boolean, default: [] })
+  @Prop({ type: Array, default: [] })
   readonly petitions: string[];
 
   @IsDate()

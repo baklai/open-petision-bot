@@ -46,7 +46,12 @@ export class ScrapersService {
 
             const tag = $(element).find('span.pet_tag').text()?.replaceAll('#', '');
             const number = $(element).find('span.pet_number').text();
-            const title = $(element).find('a.pet_link').text();
+            const title = $(element)
+              .find('a.pet_link')
+              .text()
+              .replaceAll('\n', '')
+              ?.replaceAll('  ', ' ')
+              ?.trim();
 
             const counts = $(element)
               .find('div.pet_counts')
@@ -62,24 +67,36 @@ export class ScrapersService {
               ?.replaceAll('  ', ' ')
               ?.trim();
 
-            const date = $(element)
+            const dateOfP = $(element)
               .find('div.pet_date')
               .text()
               ?.replaceAll('\n', '')
               ?.replaceAll('  ', ' ')
+              ?.trim()
+              ?.split(':')[1]
+              ?.trim();
+
+            const dateOfA = $(element)
+              .find('div.pet_date.ans')
+              .text()
+              ?.replaceAll('\n', '')
+              ?.replaceAll('  ', ' ')
+              ?.trim()
+              ?.split(':')[1]
               ?.trim();
 
             const timer = $(element).find('div.pet_timer').text();
 
             return {
               tag: tag,
-              date: date,
-              timer: timer,
+              title: title,
               status: status,
               counts: counts,
-              title: title,
-              link: fullLink,
-              number: number
+              number: number,
+              timer: timer,
+              dateOfP: dateOfP,
+              dateOfA: dateOfA,
+              link: fullLink
             };
           })
           .get();
@@ -88,7 +105,7 @@ export class ScrapersService {
 
         petitions.push(...items);
 
-        console.log(
+        console.info(
           `LOG [SCRAPER] STATUS [${status}] SORT [${sort}] ORDER [${order}] PAGE [${currentPage}] TOTAL [${items.length}]`
         );
 

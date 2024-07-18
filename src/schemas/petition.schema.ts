@@ -16,7 +16,12 @@ export class Petition {
   @IsString()
   @IsOptional()
   @Prop({ type: String, trim: true })
-  readonly date: string;
+  readonly dateOfP: string;
+
+  @IsString()
+  @IsOptional()
+  @Prop({ type: String, trim: true })
+  readonly dateOfA: string;
 
   @IsString()
   @IsOptional()

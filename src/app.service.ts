@@ -47,10 +47,10 @@ export class AppService {
       this.handlerCommandStatistic(ctx)
     );
 
+    this.initSceneQuit('quit');
     this.initSceneAdmin('admin');
     this.initSceneNotice('notice');
     this.initSceneUpdate('update');
-    this.initScenePetition('petition');
 
     this.telegramService.setOnMessage((ctx: any) => this.onMessage(ctx));
 
@@ -71,7 +71,7 @@ export class AppService {
     } else if (ctx?.update?.message?.text === '💸 Донат') {
       return await this.handlerCommandDonate(ctx);
     } else if (ctx?.update?.message?.text === '⭐️ Обрані петиції') {
-      return await this.handlerSelectedPetition(ctx);
+      return await this.handlerPaginationPetition(ctx, '0:1:0');
     } else {
       return await ctx.replyWithHTML('✌️ Дуже цікаво, але я поки що не вмію вести розмову!', {});
     }
@@ -80,13 +80,115 @@ export class AppService {
   private async onСallbackQuery(ctx: any) {
     const callbackData = ctx.callbackQuery.data;
 
-    switch (callbackData) {
-      case 'quit:confirm:yes':
-      case 'quit:confirm:cancel':
-        return await this.handlerQuitConfirm(ctx);
+    const { key, query } = JSON.parse(callbackData);
+
+    switch (key) {
+      case 'petition:selected':
+        await this.handlerSelectedPetition(ctx, query);
+        break;
+      case 'petition:unselected':
+        await this.handlerUnSelectedPetition(ctx, query);
+        break;
+      case 'pagination:first':
+        await this.handlerPaginationPetition(ctx, query);
+        break;
+      case 'pagination:prev':
+        await this.handlerPaginationPetition(ctx, query);
+        break;
+      case 'pagination:current':
+        await this.handlerPaginationPetition(ctx, query);
+        break;
+      case 'pagination:next':
+        await this.handlerPaginationPetition(ctx, query);
+        break;
+      case 'pagination:last':
+        await this.handlerPaginationPetition(ctx, query);
+        break;
       default:
         return await ctx.replyWithHTML('💢 <b>Упс!</b> Щось пішло не так!', {});
     }
+  }
+
+  private async initSceneQuit(name: string) {
+    const scene = new Scenes.BaseScene<any>(name);
+    scene.enter(async ctx => {
+      const message = [`👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!\n\n`];
+
+      const user = await this.userModel.findOne({
+        userID: ctx.userInfo.userID
+      });
+
+      if (!user) {
+        message.push('‼️ Ви не підписані на мене!\n\n');
+        message.push('⁉️ Якщо хочете підписатися відправте /start!\n');
+        return await ctx.replyWithHTML(message.join(''), {});
+      }
+
+      message.push('👌🫣 Добре, давайте відпишу Вас.\n\n');
+      message.push('<i>⁉️ Ви впевнені що хочете відписатися від мене?</i>\n\n');
+      message.push('👇 Будь ласка, підтвердіть своє наміряння');
+
+      await ctx.replyWithHTML(message.join(''), {
+        link_preview_options: {
+          is_disabled: true
+        },
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: 'Так 💯 відписатися!',
+                callback_data: JSON.stringify({ key: 'quit:confirm:yes' })
+              },
+              {
+                text: 'Ні, не відписуватися!',
+                callback_data: JSON.stringify({ key: 'quit:confirm:cancel' })
+              }
+            ]
+          ]
+        }
+      });
+    });
+
+    scene.on<any>('callback_query', async (ctx: any) => {
+      const callbackData = ctx.callbackQuery.data;
+
+      ctx.session.callbackdata = callbackData;
+
+      const { key, value } = JSON.parse(callbackData);
+
+      const message = [`👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!\n\n`];
+
+      switch (key) {
+        case 'quit:confirm:yes':
+          const user = await this.userModel.deleteOne({
+            userID: ctx.userInfo.userID
+          });
+
+          if (!user) {
+            message.push('‼️ Ви не підписані на мене!\n\n');
+            message.push('⁉️ Відправте команду /start щоб підписатися!\n');
+            return await ctx.replyWithHTML(message.join(''), {});
+          }
+
+          message.push('👌 Добре, ви відписані від боту!');
+
+          await ctx.replyWithHTML(message.join(''), {});
+          break;
+        case 'quit:confirm:cancel':
+          message.push(
+            '👌 Добре, команда була скасована.\n\n',
+            '<i>⁉️ Що я ще можу зробити для вас?</i>'
+          );
+          await ctx.replyWithHTML(message.join(''), {});
+          break;
+        default:
+          await ctx.replyWithHTML('💢 <b>Упс!</b> Щось пішло не так!', {});
+      }
+
+      ctx.scene.leave();
+    });
+
+    this.telegramService.registerBotScene(scene);
   }
 
   private async initSceneAdmin(name: string) {
@@ -107,8 +209,10 @@ export class AppService {
       if (ctx.session.secret === secret) {
         const user = await this.userModel.findOneAndUpdate(
           { userID: ctx.userInfo.userID },
-          { $set: { isAdmin: true } }
+          { $set: { isAdmin: true } },
+          { new: true }
         );
+
         if (user && user?.isAdmin) {
           ctx.replyWithHTML('👌 Добре, права адміністратора успішно надано!');
         } else {
@@ -171,74 +275,6 @@ export class AppService {
   }
 
   private async initSceneUpdate(name: string) {
-    const scene = new Scenes.BaseScene<any>(name);
-    scene.enter(async ctx => {
-      const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
-
-      if (!user || !user?.isAdmin) {
-        ctx.replyWithHTML('💢 <b>Упс!</b> У вас недостатньо повноважень!');
-        return ctx.scene.leave();
-      }
-
-      const message = [
-        `👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!`,
-        '\n\n',
-        '👌 Добре, давайте оновимо перелік петицій!\n\n',
-        '👉 Будь ласка, оберіть статус петиції зі списку.'
-      ];
-
-      ctx.replyWithHTML(message.join(''), {
-        link_preview_options: { is_disabled: true },
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: 'ТРИВАЄ ЗБІР ПІДПИСІВ', callback_data: 'update:petition:active' }],
-            [{ text: 'НА РОЗГЛЯДІ', callback_data: 'update:petition:inprocess' }],
-            [{ text: 'З ВІДПОВІДДЮ', callback_data: 'update:petition:processed' }]
-          ]
-        }
-      });
-    });
-
-    scene.on<any>('callback_query', async (ctx: any) => {
-      ctx.session.callbackdata = ctx.callbackQuery.data;
-
-      const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
-
-      if (!user || !user?.isAdmin) {
-        ctx.replyWithHTML('💢 <b>Упс!</b> У вас недостатньо повноважень!');
-        return ctx.scene.leave();
-      }
-
-      switch (ctx.session.callbackdata) {
-        case 'update:petition:active':
-          this.scrapersService.handlePetitionScrape({ status: 'active' });
-          await ctx.replyWithHTML(
-            `👌 Добре, запущено оновлення переліку петицій! Це може зайняти деякий час!`
-          );
-          break;
-        case 'update:petition:inprocess':
-          this.scrapersService.handlePetitionScrape({ status: 'in_process' });
-          await ctx.replyWithHTML(
-            `👌 Добре, запущено оновлення переліку петицій! Це може зайняти деякий час!`
-          );
-          break;
-        case 'update:petition:processed':
-          this.scrapersService.handlePetitionScrape({ status: 'processed' });
-          await ctx.replyWithHTML(
-            `👌 Добре, запущено оновлення переліку петицій! Це може зайняти деякий час!`
-          );
-          break;
-        default:
-          await ctx.replyWithHTML('💢 <b>Упс!</b> Щось пішло не так!', {});
-      }
-
-      ctx.scene.leave();
-    });
-
-    this.telegramService.registerBotScene(scene);
-  }
-
-  private async initScenePetition(name: string) {
     const scene = new Scenes.BaseScene<any>(name);
     scene.enter(async ctx => {
       const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
@@ -395,70 +431,8 @@ export class AppService {
     return ctx.scene.enter('update');
   }
 
-  private async handlerCommandQuit(ctx: TContext) {
-    const message = [`👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!\n\n`];
-
-    const user = await this.userModel.findOne({
-      userID: ctx.userInfo.userID
-    });
-
-    if (!user) {
-      message.push('‼️ Ви не підписані на мене!\n\n');
-      message.push('⁉️ Якщо хочете підписатися відправте /start!\n');
-      return await ctx.replyWithHTML(message.join(''), {});
-    }
-
-    message.push('👌🫣 Добре, давайте відпишу Вас.\n\n');
-    message.push('<i>⁉️ Ви впевнені що хочете відписатися від мене?</i>\n\n');
-    message.push('👇 Будь ласка, підтвердіть своє наміряння');
-
-    await ctx.replyWithHTML(message.join(''), {
-      link_preview_options: {
-        is_disabled: true
-      },
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: 'Так 💯 відписатися!',
-              callback_data: 'quit:confirm:yes'
-            },
-            {
-              text: 'Ні, не відписуватися!',
-              callback_data: 'quit:confirm:cancel'
-            }
-          ]
-        ]
-      }
-    });
-  }
-
-  private async handlerQuitConfirm(ctx: any) {
-    const callbackData = ctx.callbackQuery.data;
-
-    const message = [`👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!\n\n`];
-
-    if (callbackData === 'quit:confirm:yes') {
-      const user = await this.userModel.deleteOne({
-        userID: ctx.userInfo.userID
-      });
-
-      if (!user) {
-        message.push('‼️ Ви не підписані на мене!\n\n');
-        message.push('⁉️ Відправте команду /start щоб підписатися!\n');
-        return await ctx.replyWithHTML(message.join(''), {});
-      }
-
-      message.push('👌 Добре, ви відписані від боту!');
-
-      return await ctx.replyWithHTML(message.join(''), {});
-    } else {
-      message.push(
-        '👌 Добре, команда була скасована.\n\n',
-        '<i>⁉️ Що я ще можу зробити для вас?</i>'
-      );
-      return await ctx.replyWithHTML(message.join(''), {});
-    }
+  private async handlerCommandQuit(ctx: any) {
+    return ctx.scene.enter('quit');
   }
 
   private async handlerCommandDonate(ctx: TContext) {
@@ -530,8 +504,45 @@ export class AppService {
     });
   }
 
-  private async handlerCommandPetition(ctx: TContext) {
-    const [petition] = await this.petitionModel.find({}).limit(1);
+  private async handlerCommandPetition(ctx: any) {
+    await this.handlerPaginationPetition(ctx, '0:0:0');
+  }
+
+  private async handlerSelectedPetition(ctx: any, query: string) {
+    await this.userModel.findOneAndUpdate(
+      { userID: ctx.userInfo.userID },
+      { $addToSet: { petitions: query } },
+      { new: true }
+    );
+
+    return await ctx.answerCbQuery('Петицію додано до обраного!', { show_alert: true });
+  }
+
+  private async handlerUnSelectedPetition(ctx: any, query: string) {
+    await this.userModel.findOneAndUpdate(
+      { userID: ctx.userInfo.userID },
+      { $pull: { petitions: query } },
+      { new: true }
+    );
+
+    return await ctx.answerCbQuery('Петицію видалено з обраного!', { show_alert: true });
+  }
+
+  private async handlerPaginationPetition(ctx: any, query: string) {
+    const [offset = 0, selected = 0, editable = 0] = query.split(':').map(Number);
+
+    const user = selected ? await this.userModel.findOne({ userID: ctx.userInfo.userID }) : null;
+
+    const petitionsCount = selected
+      ? await this.petitionModel.countDocuments({ number: { $in: user?.petitions || [] } })
+      : await this.petitionModel.countDocuments();
+
+    const [petition] = selected
+      ? await this.petitionModel
+          .find({ number: { $in: user?.petitions || [] } })
+          .skip(offset)
+          .limit(1)
+      : await this.petitionModel.find({}).skip(offset).limit(1);
 
     const message = [];
 
@@ -554,84 +565,80 @@ export class AppService {
       });
     }
 
-    message.push(`📄 ${petition?.tag}\n\n`);
-    message.push(`<b>${petition?.title}</b>\n\n`);
-    message.push(`Номер петиції: <b>${petition?.number}</b>\n`);
-    message.push(`Статус: <b>${petition?.status}</b>\n`);
-    message.push(`Кількість голосів: <b>${petition?.counts}</b>\n`);
-    message.push(`${petition?.date}\n\n`);
-
+    message.push(`<blockquote>`);
+    message.push(`# ${petition?.tag}\n\n`);
+    message.push(`<b><a href="${petition.link}">${petition?.title}</a></b>\n\n`);
+    message.push(`</blockquote>\n`);
+    message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
+    message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
+    message.push(`▫️ <b>Кількість голосів</b>: ${petition?.counts}\n`);
+    message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.dateOfP}\n\n`);
     message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
 
-    await ctx.replyWithHTML(message.join(''), {
-      link_preview_options: { is_disabled: true },
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '📜 Переглянути петицію', url: petition.link }],
-          [{ text: '⭐️ Додати до обраного', callback_data: 'petition:set:selected' }],
-          [
-            { text: '<<', callback_data: 'petition:get:first' },
-            { text: '<', callback_data: 'petition:get:prev' },
-            { text: '1', callback_data: 'petition:get:current' },
-            { text: '>', callback_data: 'petition:get:next' },
-            { text: '>>', callback_data: 'petition:get:last' }
-          ]
-        ]
+    const inlineKeyboard = [
+      [{ text: '📜 Переглянути петицію', url: petition.link }],
+      [
+        {
+          text: selected ? '🚫 Видалити з обраного' : '⭐️ Додати до обраного',
+          callback_data: selected
+            ? JSON.stringify({ key: 'petition:unselected', query: petition.number })
+            : JSON.stringify({ key: 'petition:selected', query: petition.number })
+        }
+      ],
+      [
+        {
+          text: '<<',
+          callback_data: JSON.stringify({
+            key: 'pagination:first',
+            query: `0:${selected}:1`
+          })
+        },
+        {
+          text: '<',
+          callback_data: JSON.stringify({
+            key: 'pagination:prev',
+            query: `${offset > 0 ? offset - 1 : 0}:${selected}:1`
+          })
+        },
+        {
+          text: `${offset + 1} / ${petitionsCount}`,
+          callback_data: JSON.stringify({
+            key: 'pagination:current',
+            query: `${offset}:${selected}:1`
+          })
+        },
+        {
+          text: '>',
+          callback_data: JSON.stringify({
+            key: 'pagination:next',
+            query: `${offset < petitionsCount ? offset + 1 : petitionsCount - 1}:${selected}:1`
+          })
+        },
+        {
+          text: '>>',
+          callback_data: JSON.stringify({
+            key: 'pagination:last',
+            query: `${petitionsCount - 1}:${selected}:1`
+          })
+        }
+      ]
+    ];
+
+    if (editable) {
+      try {
+        return await ctx.editMessageText(message.join(''), {
+          link_preview_options: { is_disabled: true },
+          reply_markup: { inline_keyboard: inlineKeyboard },
+          parse_mode: 'HTML'
+        });
+      } catch (err) {
+        return null;
       }
-    });
-  }
-
-  private async handlerSelectedPetition(ctx: any) {
-    const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
-
-    const message = [];
-
-    if (!user) {
-      message.push(`👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!\n\n`);
-      message.push('🗣 <b>Ваш обліковий запис не знайдено!</b>\n\n');
-      message.push('👉 Надішліть <b>/start</b> для продовження роботи з ботом!');
-
+    } else {
       return await ctx.replyWithHTML(message.join(''), {
         link_preview_options: { is_disabled: true },
-        reply_markup: {
-          resize_keyboard: true,
-          keyboard: [
-            [{ text: '⭐️ Обрані петиції' }],
-            [{ text: '❓ Довідка' }, { text: '💸 Донат' }]
-          ]
-        }
+        reply_markup: { inline_keyboard: inlineKeyboard }
       });
     }
-
-    const petitions = await this.petitionModel.find({ number: { $in: user.petitions } });
-
-    if (!petitions.length) {
-      message.push(`👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!\n\n`);
-      message.push('🗣 <b>Ваш перелік обраних петицій порожній!</b>\n\n');
-      message.push('👉 Надішліть <b>/help</b> для перегляду списку команд');
-
-      return await ctx.replyWithHTML(message.join(''), {
-        link_preview_options: { is_disabled: true },
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: 'Переглянути всі петиції', callback_data: 'get:petition:all' }]
-          ]
-        }
-      });
-    }
-
-    message.push('🔖 <b>Ваш перелік петицій:</b>\n');
-
-    petitions.forEach((petition: Record<string, any>) => {
-      message.push(`\n🏷 <b>ПЕТИЦІЯ: ${petition.title.toUpperCase()}</b>\n`);
-    });
-
-    await ctx.replyWithHTML(message.join(''), {
-      link_preview_options: { is_disabled: true },
-      reply_markup: {
-        resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
-      }
-    });
   }
 }
