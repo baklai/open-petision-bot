@@ -21,3 +21,13 @@ export const capitalizeFirstLetter = (str: string) => {
   if (!str) return str;
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
+
+export const sleep = (duration: number) => {
+  return new Promise(resolve => setTimeout(resolve, duration));
+};
+
+export const randomInt = (min: number, max: number) => {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+};

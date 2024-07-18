@@ -5,26 +5,113 @@ import { Model } from 'mongoose';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 
+import { User } from 'src/schemas/user.schema';
 import { Petition } from 'src/schemas/petition.schema';
+import { TelegramService } from 'src/telegram/telegram.service';
+import { dateTimeToStr, randomInt, sleep } from 'src/common/utils/lib.utils';
 
 @Injectable()
 export class ScrapersService {
-  constructor(@InjectModel(Petition.name) private readonly petitionModel: Model<Petition>) {}
+  constructor(
+    @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(Petition.name) private readonly petitionModel: Model<Petition>,
+    private readonly telegramService: TelegramService
+  ) {}
 
-  @Cron('0 0 * * *', { name: 'scrape-petitions', timeZone: 'UTC' })
-  async handleTaskScrape() {}
+  // Запуск кожні три години з 6 ранку до 6 вечора:
+  @Cron('0 6-17/3 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC' })
+  async handleTaskScrapeActivePetition() {
+    await this.handlePetitionScrape({ status: 'active', sort: 'date', order: 'desc' });
+  }
+
+  // Раз на добу о 12 годині дня 30 хвилин:
+  @Cron('30 12 * * *', { name: 'scrape-petitions-in-process', timeZone: 'UTC' })
+  async handleTaskScrapeActivePetitionInProcess() {
+    await this.handlePetitionScrape({ status: 'in_process', sort: 'date', order: 'desc' });
+  }
+
+  // Раз на три дні о 6 годині ранку:
+  @Cron('0 6 */3 * *', { name: 'scrape-petitions-processed', timeZone: 'UTC' })
+  async handleTaskScrapeActivePetitionProcessed() {
+    await this.handlePetitionScrape({ status: 'processed', sort: 'date', order: 'desc' });
+  }
 
   async handlePetitionScrape({ status = 'active', sort = 'date', order = 'desc' }) {
-    const petitions = await this.petitionsScraper({ status, sort, order });
+    const petitions = await this.scraper({ status, sort, order });
 
-    await this.petitionModel.insertMany([...petitions]);
+    const newPetitions = await this.upsertPetitions(petitions);
+
+    if (status === 'active') {
+      newPetitions.forEach(async petition => {
+        const users = await this.userModel.find({}).select({ userID: 1 });
+
+        users.forEach(async ({ userID }) => {
+          await this.sendPetition(userID, petition);
+        });
+      });
+    }
   }
 
-  private sleep(duration: number) {
-    return new Promise(resolve => setTimeout(resolve, duration));
+  private async upsertPetitions(docs: any) {
+    const bulkOps = docs.map((doc: any) => ({
+      updateOne: {
+        filter: { number: doc.number },
+        update: { $set: doc },
+        upsert: true
+      }
+    }));
+
+    const result = await this.petitionModel.bulkWrite(bulkOps);
+
+    const newlyCreatedDocs = await this.petitionModel.find({
+      _id: { $in: Object.values(result.upsertedIds).map(id => id._id) }
+    });
+
+    return newlyCreatedDocs;
   }
 
-  private async petitionsScraper({ status = 'active', sort = 'date', order = 'desc' }) {
+  private async sendPetition(userID: number, petition: Record<string, any>) {
+    const message = [];
+
+    try {
+      message.push(`<blockquote>`);
+      message.push(`# ${petition?.tag}\n\n`);
+      message.push(`<b><a href="${petition.link}">${petition?.title}</a></b>\n\n`);
+      message.push(`</blockquote>\n`);
+      message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
+      message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
+      message.push(`▫️ <b>Кількість голосів</b>: ${petition?.counts}\n`);
+      message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.dateOfP}\n\n`);
+      message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
+
+      const inlineKeyboard = [
+        [{ text: '📜 Переглянути петицію', url: petition.link }],
+        [
+          {
+            text: '⭐️ Додати до обраного',
+            callback_data: JSON.stringify({ key: 'petition:selected', query: petition.number })
+          }
+        ]
+      ];
+
+      try {
+        await this.telegramService.sendMessage(userID, message.join(''), {
+          link_preview_options: { is_disabled: true },
+          reply_markup: { inline_keyboard: inlineKeyboard },
+          parse_mode: 'HTML'
+        });
+      } catch (err) {
+        if (err?.response?.error_code === 403) {
+          console.error(err?.response?.description);
+          await this.userModel.findOneAndDelete({ userID: userID });
+        }
+      }
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+
+  private async scraper({ status = 'active', sort = 'date', order = 'desc' }) {
     const petitions = [];
     try {
       const baseUrl = 'https://petition.president.gov.ua';
@@ -41,37 +128,38 @@ export class ScrapersService {
 
         const items = $('div.pet_item')
           .map((index, element) => {
-            const relativeLink = $(element).find('a.pet_link').attr('href');
-            const fullLink = new URL(relativeLink, baseUrl).href;
+            const link = $(element).find('a.pet_link').attr('href');
 
-            const tag = $(element).find('span.pet_tag').text()?.replaceAll('#', '');
-            const number = $(element).find('span.pet_number').text();
+            const number = $(element).find('span.pet_number').text()?.trim();
+
+            const tag = $(element).find('span.pet_tag').text()?.replaceAll('#', '')?.trim();
+
             const title = $(element)
               .find('a.pet_link')
               .text()
               .replaceAll('\n', '')
-              ?.replaceAll('  ', ' ')
+              ?.replace(/\s+/g, ' ')
               ?.trim();
 
             const counts = $(element)
               .find('div.pet_counts')
               .text()
               ?.replaceAll('\n', '')
-              ?.replaceAll('  ', ' ')
+              ?.replace(/\s+/g, ' ')
               ?.trim();
 
             const status = $(element)
               .find('div.pet_status')
               .text()
               ?.replaceAll('\n', '')
-              ?.replaceAll('  ', ' ')
+              ?.replace(/\s+/g, ' ')
               ?.trim();
 
             const dateOfP = $(element)
               .find('div.pet_date')
               .text()
               ?.replaceAll('\n', '')
-              ?.replaceAll('  ', ' ')
+              ?.replace(/\s+/g, ' ')
               ?.trim()
               ?.split(':')[1]
               ?.trim();
@@ -80,12 +168,12 @@ export class ScrapersService {
               .find('div.pet_date.ans')
               .text()
               ?.replaceAll('\n', '')
-              ?.replaceAll('  ', ' ')
+              ?.replace(/\s+/g, ' ')
               ?.trim()
               ?.split(':')[1]
               ?.trim();
 
-            const timer = $(element).find('div.pet_timer').text();
+            const timer = $(element).find('div.pet_timer').text()?.trim();
 
             return {
               tag: tag,
@@ -96,7 +184,7 @@ export class ScrapersService {
               timer: timer,
               dateOfP: dateOfP,
               dateOfA: dateOfA,
-              link: fullLink
+              link: new URL(link, baseUrl).href
             };
           })
           .get();
@@ -109,7 +197,7 @@ export class ScrapersService {
           `LOG [SCRAPER] STATUS [${status}] SORT [${sort}] ORDER [${order}] PAGE [${currentPage}] TOTAL [${items.length}]`
         );
 
-        await this.sleep(5000);
+        await sleep(randomInt(3000, 10000));
 
         currentPage++;
       } while (isRunning);

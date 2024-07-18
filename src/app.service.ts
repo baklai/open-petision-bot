@@ -463,7 +463,25 @@ export class AppService {
 
     const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
 
-    const petitionsCount = await this.petitionModel.aggregate([
+    const petitionCount = await this.petitionModel.countDocuments();
+
+    const petitionStatusCount = await this.petitionModel.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          status: '$_id',
+          count: 1
+        }
+      }
+    ]);
+
+    const petitionTagCount = await this.petitionModel.aggregate([
       {
         $group: {
           _id: '$tag',
@@ -480,16 +498,18 @@ export class AppService {
     ]);
 
     const message = [
-      `👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!`,
-      '\n\n',
-      '📊 <b>Статистика додатку:</b>\n\n',
-      user?.isAdmin ? `ℹ️ <b>Кількість користувачів: ${usersCount}</b>\n\n` : '',
+      '📊 <b>Статистика додатку</b>\n\n',
+      user?.isAdmin ? `👤 <b>Кількість користувачів: ${usersCount}</b>\n\n` : '',
       `⭐️ <b>Обрані Петиції:</b> ${user?.petitions?.length || 0}`,
       '\n\n',
-      `🔖 <b>Петиції за темами:</b>\n`,
+      `🔖 <b>Петицій загалом:</b> ${petitionCount || 0}`,
+      '\n\n',
+      `🔖 <b>Петиції за статусами:</b>\n`,
+      ...petitionStatusCount.map((item: any) => `<i> ▫️ ${item.status}: ${item.count}</i>\n`),
       '\n',
-      ...petitionsCount.map(
-        (item: any) => `<i> 🔸 ${item.tag?.replaceAll('#', '')}: ${item.count}</i>\n`
+      `🔖 <b>Петиції за темами:</b>\n`,
+      ...petitionTagCount.map(
+        (item: any) => `<i> ▫️ ${item.tag?.replaceAll('#', '')}: ${item.count}</i>\n`
       ),
       '\n\n',
       '👉 Надішліть <b>/help</b> для перегляду списку команд'
@@ -515,7 +535,7 @@ export class AppService {
       { new: true }
     );
 
-    return await ctx.answerCbQuery('Петицію додано до обраного!', { show_alert: true });
+    return await ctx.answerCbQuery(`Петицію ${query} додано до обраного!`, { show_alert: true });
   }
 
   private async handlerUnSelectedPetition(ctx: any, query: string) {
@@ -525,7 +545,8 @@ export class AppService {
       { new: true }
     );
 
-    return await ctx.answerCbQuery('Петицію видалено з обраного!', { show_alert: true });
+    await ctx.answerCbQuery(`Петицію ${query} видалено з обраного!`, { show_alert: true });
+    await this.handlerPaginationPetition(ctx, '0:1:1');
   }
 
   private async handlerPaginationPetition(ctx: any, query: string) {
@@ -535,19 +556,20 @@ export class AppService {
 
     const petitionsCount = selected
       ? await this.petitionModel.countDocuments({ number: { $in: user?.petitions || [] } })
-      : await this.petitionModel.countDocuments();
+      : await this.petitionModel.countDocuments({ status: 'Триває збір підписів' });
 
     const [petition] = selected
       ? await this.petitionModel
           .find({ number: { $in: user?.petitions || [] } })
           .skip(offset)
           .limit(1)
-      : await this.petitionModel.find({}).skip(offset).limit(1);
+      : await this.petitionModel.find({ status: 'Триває збір підписів' }).skip(offset).limit(1);
 
     const message = [];
 
     if (!petition) {
       message.push(`👋👋👋 <b><i>${ctx.userInfo.firstName}</i>, мої вітання</b>!\n\n`);
+
       selected
         ? message.push(
             '🗣 <b>Ваш перелік обраних петицій порожній!</b> Додайте петицію до обраного, щоб отримувати оновлення!\n\n'
@@ -555,6 +577,9 @@ export class AppService {
         : message.push(
             '🗣 <b>Перелік петицій порожній!</b> Ми працюємо над тим щоб петиції стали доступними в найближчий час!\n\n'
           );
+
+      message.push('👉 Надішліть <b>/petition</b> для перегляду переліку активних петицій\n\n');
+
       message.push('👉 Надішліть <b>/help</b> для перегляду списку команд');
 
       return await ctx.replyWithHTML(message.join(''), {
@@ -615,7 +640,7 @@ export class AppService {
           text: '>',
           callback_data: JSON.stringify({
             key: 'pagination:next',
-            query: `${offset < petitionsCount ? offset + 1 : petitionsCount - 1}:${selected}:1`
+            query: `${offset < petitionsCount - 1 ? offset + 1 : petitionsCount - 1}:${selected}:1`
           })
         },
         {

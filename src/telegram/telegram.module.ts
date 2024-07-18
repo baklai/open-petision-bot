@@ -1,4 +1,4 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Global, Module } from '@nestjs/common';
 import { Context, Telegraf, Telegram, session } from 'telegraf';
 import { Update, UserFromGetMe } from 'telegraf/typings/core/types/typegram';
 
@@ -19,6 +19,7 @@ export class TContext extends Context {
   }
 }
 
+@Global()
 @Module({})
 export class TelegramModule {
   static forRootAsync(options: {
