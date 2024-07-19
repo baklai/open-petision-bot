@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cron } from '@nestjs/schedule';
+import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
@@ -15,13 +16,17 @@ export class ScrapersService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
     @InjectModel(Petition.name) private readonly petitionModel: Model<Petition>,
-    private readonly telegramService: TelegramService
+    private readonly telegramService: TelegramService,
+    private readonly configService: ConfigService
   ) {}
 
   // Запуск кожної години з 6 ранку до 6 вечора:
   @Cron('0 6-18 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC' })
   async handleTaskScrapeActivePetition() {
-    console.info('Running cron: scrape-petitions-active');
+    const mode = this.configService.get<string>('NODE_ENV');
+    if (mode === 'development') return;
+
+    console.info(`LOG [CRON] NAME [scrape-petitions-active] STATUS [Running] DATE [${new Date()}]`);
 
     // Рандомна хвилина запуску з 0 до 15 хвилини
     const delay = Math.floor(Math.random() * 16) * 60 * 1000;
@@ -34,7 +39,12 @@ export class ScrapersService {
   // Раз на добу о 12 годині дня 30 хвилин:
   @Cron('30 12 * * *', { name: 'scrape-petitions-in-process', timeZone: 'UTC' })
   async handleTaskScrapeActivePetitionInProcess() {
-    console.info('Running cron: scrape-petitions-in-process');
+    const mode = this.configService.get<string>('NODE_ENV');
+    if (mode === 'development') return;
+
+    console.info(
+      `LOG [CRON] NAME [scrape-petitions-in-process] STATUS [Running] DATE [${new Date()}]`
+    );
 
     // Рандомна хвилина запуску з 0 до 15 хвилини
     const delay = Math.floor(Math.random() * 16) * 60 * 1000;
@@ -47,7 +57,12 @@ export class ScrapersService {
   // Раз на три дні о 6 годині ранку:
   @Cron('0 8 */3 * *', { name: 'scrape-petitions-processed', timeZone: 'UTC' })
   async handleTaskScrapeActivePetitionProcessed() {
-    console.info('Running cron: scrape-petitions-in-process');
+    const mode = this.configService.get<string>('NODE_ENV');
+    if (mode === 'development') return;
+
+    console.info(
+      `LOG [CRON] NAME [scrape-petitions-processed] STATUS [Running] DATE [${new Date()}]`
+    );
 
     // Рандомна хвилина запуску з 0 до 15 хвилини
     const delay = Math.floor(Math.random() * 16) * 60 * 1000;
