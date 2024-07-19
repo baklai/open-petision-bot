@@ -26,7 +26,9 @@ export class ScrapersService {
     const mode = this.configService.get<string>('NODE_ENV');
     if (mode === 'development') return;
 
-    console.info(`LOG [CRON] NAME [scrape-petitions-active] STATUS [Running] DATE [${new Date()}]`);
+    console.info(
+      `LOG [CRON] NAME [scrape-petitions-active] STATUS [Running] DATE [${new Date().toLocaleString()}]`
+    );
 
     // Рандомна хвилина запуску з 0 до 15 хвилини
     const delay = Math.floor(Math.random() * 16) * 60 * 1000;
@@ -43,7 +45,7 @@ export class ScrapersService {
     if (mode === 'development') return;
 
     console.info(
-      `LOG [CRON] NAME [scrape-petitions-in-process] STATUS [Running] DATE [${new Date()}]`
+      `LOG [CRON] NAME [scrape-petitions-in-process] STATUS [Running] DATE [${new Date().toLocaleString()}]`
     );
 
     // Рандомна хвилина запуску з 0 до 15 хвилини
@@ -61,7 +63,7 @@ export class ScrapersService {
     if (mode === 'development') return;
 
     console.info(
-      `LOG [CRON] NAME [scrape-petitions-processed] STATUS [Running] DATE [${new Date()}]`
+      `LOG [CRON] NAME [scrape-petitions-processed] STATUS [Running] DATE [${new Date().toLocaleString()}]`
     );
 
     // Рандомна хвилина запуску з 0 до 15 хвилини
@@ -222,7 +224,7 @@ export class ScrapersService {
         petitions.push(...items);
 
         console.info(
-          `LOG [SCRAPER] STATUS [${status}] SORT [${sort}] ORDER [${order}] PAGE [${currentPage}] TOTAL [${items.length}]`
+          `LOG [SCRAPER] DATE [${new Date().toLocaleString()}] STATUS [${status}] SORT [${sort}] ORDER [${order}] PAGE [${currentPage}] TOTAL [${items.length}]`
         );
 
         await sleep(randomInt(3000, 10000));

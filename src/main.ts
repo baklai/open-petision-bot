@@ -22,7 +22,7 @@ async function bootstrap() {
   }
 
   await app.listen(port, host, async () => {
-    console.info(`The application in ${mode} mode and run on: ${await app.getUrl()}/`);
+    console.info(`The application in ${mode} mode and run on ${await app.getUrl()}/`);
   });
 }
 bootstrap();
