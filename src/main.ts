@@ -12,11 +12,15 @@ async function bootstrap() {
 
   const port = configService.get<number>('PORT');
   const host = configService.get<string>('HOST');
+  const mode = configService.get<string>('NODE_ENV');
+  const webHook = configService.get<string>('WEB_HOOK');
 
-  app.use(await appService.createWebhookTelegramBot());
+  if (webHook) {
+    app.use(await appService.createWebhookTelegramBot());
+  }
 
   await app.listen(port, host, async () => {
-    console.info(`Application is running on: ${await app.getUrl()}/`);
+    console.info(`The application in ${mode} mode and run on: ${await app.getUrl()}/`);
   });
 }
 bootstrap();
