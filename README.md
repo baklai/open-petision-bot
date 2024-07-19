@@ -7,7 +7,7 @@
 ## Project setup
 
 ```
-npm i
+npm install
 ```
 
 ## Project variables
