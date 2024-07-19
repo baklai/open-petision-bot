@@ -18,22 +18,43 @@ export class ScrapersService {
     private readonly telegramService: TelegramService
   ) {}
 
-  // Запуск кожні три години з 6 ранку до 6 вечора:
-  @Cron('0 6-17/3 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC' })
+  // Запуск кожної години з 6 ранку до 6 вечора:
+  @Cron('0 6-18 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC' })
   async handleTaskScrapeActivePetition() {
-    await this.handlePetitionScrape({ status: 'active', sort: 'date', order: 'desc' });
+    console.info('Running cron: scrape-petitions-active');
+
+    // Рандомна хвилина запуску з 0 до 15 хвилини
+    const delay = Math.floor(Math.random() * 16) * 60 * 1000;
+
+    setTimeout(async () => {
+      await this.handlePetitionScrape({ status: 'active', sort: 'date', order: 'desc' });
+    }, delay);
   }
 
   // Раз на добу о 12 годині дня 30 хвилин:
   @Cron('30 12 * * *', { name: 'scrape-petitions-in-process', timeZone: 'UTC' })
   async handleTaskScrapeActivePetitionInProcess() {
-    await this.handlePetitionScrape({ status: 'in_process', sort: 'date', order: 'desc' });
+    console.info('Running cron: scrape-petitions-in-process');
+
+    // Рандомна хвилина запуску з 0 до 15 хвилини
+    const delay = Math.floor(Math.random() * 16) * 60 * 1000;
+
+    setTimeout(async () => {
+      await this.handlePetitionScrape({ status: 'in_process', sort: 'date', order: 'desc' });
+    }, delay);
   }
 
   // Раз на три дні о 6 годині ранку:
-  @Cron('0 6 */3 * *', { name: 'scrape-petitions-processed', timeZone: 'UTC' })
+  @Cron('0 8 */3 * *', { name: 'scrape-petitions-processed', timeZone: 'UTC' })
   async handleTaskScrapeActivePetitionProcessed() {
-    await this.handlePetitionScrape({ status: 'processed', sort: 'date', order: 'desc' });
+    console.info('Running cron: scrape-petitions-in-process');
+
+    // Рандомна хвилина запуску з 0 до 15 хвилини
+    const delay = Math.floor(Math.random() * 16) * 60 * 1000;
+
+    setTimeout(async () => {
+      await this.handlePetitionScrape({ status: 'processed', sort: 'date', order: 'desc' });
+    }, delay);
   }
 
   async handlePetitionScrape({ status = 'active', sort = 'date', order = 'desc' }) {
