@@ -102,11 +102,11 @@ export class ScrapersService {
       message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
       message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
       message.push(`▫️ <b>Кількість голосів</b>: ${petition?.counts}\n`);
-      message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.dateOfP}\n\n`);
+      message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.publishedAt}\n\n`);
       message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
 
       const inlineKeyboard = [
-        [{ text: '📜 Переглянути петицію', url: petition.link }],
+        [{ text: '📄 Переглянути петицію', url: petition.link }],
         [
           {
             text: '⭐️ Додати до обраного',
@@ -149,7 +149,9 @@ export class ScrapersService {
 
         const items = $('div.pet_item')
           .map((index, element) => {
-            const link = $(element).find('a.pet_link').attr('href');
+            const href = $(element).find('a.pet_link').attr('href');
+
+            const link = new URL(href, baseUrl).href;
 
             const number = $(element).find('span.pet_number').text()?.trim();
 
@@ -176,7 +178,7 @@ export class ScrapersService {
               ?.replace(/\s+/g, ' ')
               ?.trim();
 
-            const dateOfP = $(element)
+            const publishedAt = $(element)
               .find('div.pet_date')
               .text()
               ?.replaceAll('\n', '')
@@ -185,7 +187,7 @@ export class ScrapersService {
               ?.split(':')[1]
               ?.trim();
 
-            const dateOfA = $(element)
+            const answeredAt = $(element)
               .find('div.pet_date.ans')
               .text()
               ?.replaceAll('\n', '')
@@ -196,17 +198,7 @@ export class ScrapersService {
 
             const timer = $(element).find('div.pet_timer').text()?.trim();
 
-            return {
-              tag: tag,
-              title: title,
-              status: status,
-              counts: counts,
-              number: number,
-              timer: timer,
-              dateOfP: dateOfP,
-              dateOfA: dateOfA,
-              link: new URL(link, baseUrl).href
-            };
+            return { tag, title, status, counts, number, timer, publishedAt, answeredAt, link };
           })
           .get();
 

@@ -11,17 +11,17 @@ export class Petition {
   @IsString()
   @IsOptional()
   @Prop({ type: String, trim: true })
-  readonly tag: string;
+  readonly creator: string;
 
   @IsString()
   @IsOptional()
   @Prop({ type: String, trim: true })
-  readonly dateOfP: string;
+  readonly publishedAt: string;
 
   @IsString()
   @IsOptional()
   @Prop({ type: String, trim: true })
-  readonly dateOfA: string;
+  readonly answeredAt: string;
 
   @IsString()
   @IsOptional()
@@ -41,7 +41,17 @@ export class Petition {
   @IsString()
   @IsOptional()
   @Prop({ type: String, trim: true })
+  readonly tag: string;
+
+  @IsString()
+  @IsOptional()
+  @Prop({ type: String, trim: true })
   readonly title: string;
+
+  @IsString()
+  @IsOptional()
+  @Prop({ type: String, trim: true })
+  readonly text: string;
 
   @IsString()
   @IsOptional()

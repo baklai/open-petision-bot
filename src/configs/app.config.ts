@@ -1,8 +1,8 @@
 const PORT = '3000';
 const HOST = '0.0.0.0';
-const SECRET = '4EfVKy5nXIXgD6fNk2ssI';
-const DONATE = 'http://localhost:3000';
-const MONGO_URI = 'mongodb://localhost:27017/holodos';
+const SECRET = '4EfVKy5nXIXgD6fNk2ssIKy5nXIXgD6fNkfVKy5n';
+const DONATE = null;
+const MONGO_URI = null;
 
 export default () => ({
   HOST: process.env.HOST || HOST,

@@ -17,6 +17,7 @@ import {
   SYSTEM_COMMANDS
 } from './common/constants/commands.constant';
 import { dateTimeToStr } from './common/utils/lib.utils';
+import { MAIN_KEYBOARD } from './common/constants/keyboards.constant';
 
 @Injectable()
 export class AppService {
@@ -372,9 +373,10 @@ export class AppService {
 
     await ctx.replyWithHTML(message.join(''), {
       link_preview_options: { is_disabled: true },
+
       reply_markup: {
         resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
+        keyboard: MAIN_KEYBOARD
       }
     });
 
@@ -413,7 +415,7 @@ export class AppService {
       link_preview_options: { is_disabled: true },
       reply_markup: {
         resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
+        keyboard: MAIN_KEYBOARD
       }
     });
   }
@@ -431,7 +433,7 @@ export class AppService {
       link_preview_options: { is_disabled: true },
       reply_markup: {
         resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
+        keyboard: MAIN_KEYBOARD
       }
     });
   }
@@ -536,7 +538,7 @@ export class AppService {
       link_preview_options: { is_disabled: true },
       reply_markup: {
         resize_keyboard: true,
-        keyboard: [[{ text: '⭐️ Обрані петиції' }], [{ text: '❓ Довідка' }, { text: '💸 Донат' }]]
+        keyboard: MAIN_KEYBOARD
       }
     });
   }
@@ -599,36 +601,50 @@ export class AppService {
 
       message.push('👉 Надішліть <b>/help</b> для перегляду списку команд');
 
-      return await ctx.replyWithHTML(message.join(''), {
-        link_preview_options: { is_disabled: true },
-        reply_markup: {
-          resize_keyboard: true,
-          keyboard: [
-            [{ text: '⭐️ Обрані петиції' }],
-            [{ text: '❓ Довідка' }, { text: '💸 Донат' }]
-          ]
-        }
-      });
+      if (editable) {
+        return await ctx.editMessageText(message.join(''), {
+          link_preview_options: { is_disabled: true },
+          reply_markup: { inline_keyboard: [] },
+          parse_mode: 'HTML'
+        });
+      } else {
+        return await ctx.replyWithHTML(message.join(''), {
+          link_preview_options: { is_disabled: true },
+          reply_markup: {
+            resize_keyboard: true,
+            keyboard: [
+              [{ text: '⭐️ Обрані петиції' }],
+              [{ text: '❓ Довідка' }, { text: '💸 Донат' }]
+            ]
+          }
+        });
+      }
     }
 
     message.push(`<blockquote>`);
     message.push(`# ${petition?.tag}\n\n`);
-    message.push(`<b><a href="${petition.link}">${petition?.title}</a></b>\n\n`);
+    message.push(`<b><a href="${petition?.link}">${petition?.title}</a></b>\n`);
+    message.push(petition?.text ? `${petition.text}"\n` : '\n');
     message.push(`</blockquote>\n`);
     message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
     message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
     message.push(`▫️ <b>Кількість голосів</b>: ${petition?.counts}\n`);
-    message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.dateOfP}\n\n`);
+    message.push(petition?.creator ? `▫️ <b>Автор (ініціатор)</b>: ${petition?.creator}\n` : '');
+    message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.publishedAt}\n\n`);
+    message.push(petition?.creator ? `▫️ <b>Дата відповіді</b>: ${petition?.answeredAt}\n` : '');
     message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
 
     const inlineKeyboard = [
-      [{ text: '📜 Переглянути петицію', url: petition.link }],
+      [
+        { text: '📄 Переглянути', url: petition?.link },
+        { text: '👍 Підтримати', url: petition?.link }
+      ],
       [
         {
           text: selected ? '🚫 Видалити з обраного' : '⭐️ Додати до обраного',
           callback_data: selected
-            ? JSON.stringify({ key: 'petition:unselected', callback: petition.number })
-            : JSON.stringify({ key: 'petition:selected', callback: petition.number })
+            ? JSON.stringify({ key: 'petition:unselected', callback: petition?.number })
+            : JSON.stringify({ key: 'petition:selected', callback: petition?.number })
         }
       ],
       [

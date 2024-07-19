@@ -17,6 +17,8 @@ async function bootstrap() {
 
   if (webHook) {
     app.use(await appService.createWebhookTelegramBot());
+  } else {
+    appService.createWebhookTelegramBot();
   }
 
   await app.listen(port, host, async () => {

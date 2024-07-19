@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Req } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Post, Req } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 import { AppService } from './app.service';
@@ -16,10 +16,13 @@ export class AppController {
     @Body() processUpdate: Record<string, any>
   ): any {
     const requestPath: string = req.url;
-    if (requestPath.includes(`bot${this.configService.get<string>('telegramBotToken')}`)) {
+    const token = this.configService.get<string>('BOT_TOKEN');
+    const webHook = this.configService.get<string>('WEB_HOOK');
+
+    if (requestPath.includes(`bot${token}`) && webHook) {
       return this.appService.statusTelegramBot(processUpdate);
     } else {
-      throw new Error('Invalid route');
+      throw new BadRequestException('Invalid field value');
     }
   }
 }
