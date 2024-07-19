@@ -295,9 +295,24 @@ export class AppService {
         link_preview_options: { is_disabled: true },
         reply_markup: {
           inline_keyboard: [
-            [{ text: 'ТРИВАЄ ЗБІР ПІДПИСІВ', callback_data: 'update:petition:active' }],
-            [{ text: 'НА РОЗГЛЯДІ', callback_data: 'update:petition:inprocess' }],
-            [{ text: 'З ВІДПОВІДДЮ', callback_data: 'update:petition:processed' }]
+            [
+              {
+                text: 'ТРИВАЄ ЗБІР ПІДПИСІВ',
+                callback_data: JSON.stringify({ key: 'update:petition:active' })
+              }
+            ],
+            [
+              {
+                text: 'НА РОЗГЛЯДІ',
+                callback_data: JSON.stringify({ key: 'update:petition:inprocess' })
+              }
+            ],
+            [
+              {
+                text: 'З ВІДПОВІДДЮ',
+                callback_data: JSON.stringify({ key: 'update:petition:processed' })
+              }
+            ]
           ]
         }
       });
@@ -313,7 +328,9 @@ export class AppService {
         return ctx.scene.leave();
       }
 
-      switch (ctx.session.callbackdata) {
+      const { key } = JSON.parse(ctx.session.callbackdata);
+
+      switch (key) {
         case 'update:petition:active':
           this.scrapersService.handlePetitionScrape({ status: 'active' });
           await ctx.replyWithHTML(
