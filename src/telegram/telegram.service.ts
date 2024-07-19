@@ -20,9 +20,12 @@ export class TelegramService {
   }
 
   async botLaunch() {
-    return await this.bot.createWebhook({
-      domain: `${this.configService.get<string>('WEB_HOOK')}`
-    });
+    const webHook = this.configService.get<string>('WEB_HOOK');
+    if (webHook) {
+      return await this.bot.createWebhook({ domain: webHook });
+    } else {
+      return await this.bot.launch();
+    }
   }
 
   async setBotMyCommands(commands: BotCommand[]) {

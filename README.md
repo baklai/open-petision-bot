@@ -12,16 +12,17 @@ npm i
 
 ## Project variables
 
-| Key         | Comment                   |
-| ----------- | ------------------------- |
-| `PORT`      | API Port (optional)       |
-| `HOST`      | API Host (optional)       |
-| `SECRET`    | Secret key (optional)     |
-| `MONGO_URI` | Mongo connection string   |
-| `BOT_TOKEN` | Telegram bot token        |
-| `WEB_HOOK`  | Telegram Web Hook URL     |
-| `PROXY`     | Proxy server (optional)   |
-| `DONATE`    | URL for donate (optional) |
+| Key         | Comment                              |
+| ----------- | ------------------------------------ |
+| `PORT`      | API Port (optional)                  |
+| `HOST`      | API Host (optional)                  |
+| `NODE_ENV`  | Operating mode (default: production) |
+| `SECRET`    | Secret key (optional)                |
+| `MONGO_URI` | Mongo connection string              |
+| `BOT_TOKEN` | Telegram bot token                   |
+| `WEB_HOOK`  | Telegram Web Hook URL (optional)     |
+| `PROXY`     | Proxy server (optional)              |
+| `DONATE`    | URL for donate (optional)            |
 
 ### Development
 
