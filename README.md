@@ -26,19 +26,19 @@ npm install
 
 ### Development
 
-```
+```bash
 npm run start:dev
 ```
 
 ### Build
 
-```
+```bash
 npm run build
 ```
 
 ### Production
 
-```
+```bash
 npm run start
 ```
 
