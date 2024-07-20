@@ -49,10 +49,6 @@ docker compose up --build -d
 ```
 
 ```
-docker ps -a
-```
-
-```
 docker logs -f open-petition-bot
 ```
 

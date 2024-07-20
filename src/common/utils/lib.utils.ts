@@ -1,12 +1,12 @@
-export const dateToStr = (value: Date) => {
-  return value ? new Date(value).toLocaleDateString() : value;
+export const dateToStr = (value: Date, locale = 'uk-UA') => {
+  return value ? new Date(value).toLocaleDateString(locale) : value;
 };
 
-export const dateTimeToStr = (value: Date) => {
-  return value ? new Date(value).toLocaleString() : value;
+export const dateTimeToStr = (value: Date, locale = 'uk-UA') => {
+  return value ? new Date(value).toLocaleString(locale) : value;
 };
 
-export const dateToLocaleStr = (value: Date, locale: string) => {
+export const dateToLocaleStr = (value: Date, locale: 'uk-UA') => {
   return value
     ? new Date(value).toLocaleDateString(locale, {
         month: 'long',

@@ -4,32 +4,40 @@
 
 ARG NODE_VERSION=18.17.1
 
-FROM node:${NODE_VERSION}-alpine
-
-# Use production node environment by default.
-ENV NODE_ENV production
+# Building layer
+FROM node:${NODE_VERSION}-alpine AS development
 
 WORKDIR /app
 
-COPY package.json ./
+# Copy configuration files
+COPY tsconfig*.json ./
+COPY package*.json ./
 
-RUN npm i -g @nestjs/cli
-
-RUN npm i -g @types/node
-
-# Install dependencies
+# Install dependencies from package.json
 RUN npm install
 
-# Copy the rest of the source files into the image.
-COPY . .
+# Copy application sources (.ts, .tsx, js)
+COPY src/ src/
 
-# Build application
+# Build application (produces dist/ folder)
 RUN npm run build
 
-# Expose the port that the application listens on.
+# Runtime (production) layer
+FROM node:${NODE_VERSION}-alpine AS production
+
+WORKDIR /app
+
+# Copy dependencies files
+COPY package*.json ./
+
+# Install runtime dependecies (without dev/test dependecies)
+RUN npm i --omit=dev
+
+# Copy production build
+COPY --from=development /app/dist/ ./dist/
+
+# Expose application port
 EXPOSE 3000
 
-# Run the application with sourcing the env file
-CMD [ "npm", "run", "start"]
-
-
+# Start application
+CMD [ "node", "dist/main.js" ]

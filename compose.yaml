@@ -13,10 +13,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file: .env
     environment:
-      - ENV_PATH=/app/.env
-    volumes:
-      - .env:/app/.env
+      - NODE_ENV=production
     ports:
       - 3000:3000
     container_name: open-petition-bot
