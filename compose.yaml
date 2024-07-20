@@ -18,4 +18,5 @@ services:
       - NODE_ENV=production
     ports:
       - 3000:3000
+    restart: unless-stopped
     container_name: open-petition-bot
