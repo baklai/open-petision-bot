@@ -42,19 +42,44 @@ npm run build
 npm run start
 ```
 
-### Run the application
+### PM2 Process Management Quick Start
 
+```bash
+# Start application
+pm2 start ecosystem.config.js
+
+# Stop application
+pm2 stop ecosystem.config.js
+
+# Restart application
+pm2 restart ecosystem.config.js
+
+# Reload application
+pm2 reload ecosystem.config.js
+
+# Delete application
+pm2 delete ecosystem.config.js
 ```
+
+### Docker Compose Quick Start
+
+```bash
+# Start application
+
 docker compose up --build -d
 ```
 
-```
+```bash
+# Logs application
+
 docker logs -f open-petition-bot
 ```
 
 In the terminal, run the following command to stop the application.
 
-```
+```bash
+# Delete application
+
 docker compose down
 ```
 
