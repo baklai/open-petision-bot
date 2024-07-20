@@ -61,6 +61,12 @@ pm2 reload ecosystem.config.js
 pm2 delete ecosystem.config.js
 ```
 
+```bash
+# Logs application
+
+pm2 logs open-petition-bot
+```
+
 ### Docker Compose Quick Start
 
 ```bash
