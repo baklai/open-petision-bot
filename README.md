@@ -42,6 +42,26 @@ npm run build
 npm run start
 ```
 
+### Run the application
+
+```
+docker compose up --build -d
+```
+
+```
+docker ps -a
+```
+
+```
+docker logs -f open-petition-bot
+```
+
+In the terminal, run the following command to stop the application.
+
+```
+docker compose down
+```
+
 ## Лицензия
 
 [MIT](LICENSE)
