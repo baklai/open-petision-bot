@@ -39,8 +39,34 @@ npm run build
 ### Build Docker images
 
 ```bash
-# Build docker image and push service images
-docker compose build --push
+# Build docker image
+docker compose build
+
+# Build docker multiplatform images
+docker compose build --builder multibuilder
+
+# Pushes images to the repository
+docker compose push
+```
+
+If your cloud uses a different CPU architecture than your development
+machine (e.g., you are on a Mac M1 and your cloud provider is amd64),
+you'll want to build the image for that platform, e.g.:
+
+```bash
+# Make sure you have buildx installed. If it is not installed, install it as follows
+docker buildx install
+
+# Build and switch to buildx builder
+docker buildx create --platform linux/amd64,linux/i386,linux/arm/v5,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x --name multibuilder --use
+
+# Start the builder instance
+docker buildx inspect --bootstrap
+```
+
+```bash
+# Use Docker registry
+docker login
 ```
 
 ### Quick Start
