@@ -3,6 +3,7 @@ export const MAIN_COMMANDS = {
   commands: [
     { command: 'help', description: 'довідка по роботі з ботом' },
     { command: 'about', description: 'про бот і його можливості' },
+    { command: 'search', description: 'пошук петиції за номером' },
     { command: 'petition', description: 'перелік активних петицій' }
   ]
 };

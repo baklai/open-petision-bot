@@ -41,6 +41,7 @@ export class AppService {
     this.telegramService.setBotCommand('admin', (ctx: any) => this.handlerCommandAdmin(ctx));
     this.telegramService.setBotCommand('update', (ctx: any) => this.handlerCommandUpdate(ctx));
     this.telegramService.setBotCommand('donate', (ctx: TContext) => this.handlerCommandDonate(ctx));
+    this.telegramService.setBotCommand('search', (ctx: TContext) => this.handlerCommandSearch(ctx));
     this.telegramService.setBotCommand('petition', (ctx: TContext) =>
       this.handlerCommandPetition(ctx)
     );
@@ -50,6 +51,7 @@ export class AppService {
 
     this.initSceneQuit('quit');
     this.initSceneAdmin('admin');
+    this.initSceneSearch('search');
     this.initSceneNotice('notice');
     this.initSceneUpdate('update');
 
@@ -224,6 +226,62 @@ export class AppService {
       }
 
       ctx.scene.leave();
+    });
+
+    this.telegramService.registerBotScene(scene);
+  }
+
+  private async initSceneSearch(name: string) {
+    const scene = new Scenes.BaseScene<any>(name);
+    scene.enter(async ctx => {
+      const message = [
+        '👌 Добре, давайте знайдемо петицію!\n\n',
+        '👉 Будь ласка, введіть номер петиції у форматі <b>№XX/XXXXXX-xx</b> :'
+      ];
+
+      ctx.replyWithHTML(message.join(''));
+    });
+
+    scene.on<any>('text', async (ctx: any) => {
+      ctx.session.message = ctx.message.text;
+      const message = [];
+      const inlineKeyboard = [];
+      try {
+        const petition = await this.petitionModel.findOne({ number: ctx.session.message });
+
+        if (petition) {
+          message.push(`<blockquote>`);
+          message.push(`# ${petition?.tag}\n\n`);
+          message.push(`<b><a href="${petition.link}">${petition?.title}</a></b>\n\n`);
+          message.push(`</blockquote>\n`);
+          message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
+          message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
+          message.push(`▫️ <b>Кількість голосів</b>: ${petition?.counts}\n`);
+          message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.publishedAt}\n\n`);
+          message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
+
+          inlineKeyboard.push([{ text: '📄 Переглянути петицію', url: petition.link }]);
+          inlineKeyboard.push([
+            {
+              text: '⭐️ Додати до обраного',
+              callback_data: JSON.stringify({ key: 'petition:selected', query: petition.number })
+            }
+          ]);
+        } else {
+          message.push(`💢 <b>Упс!</b> Ваша петиція <b>${ctx.session.message}</b> не знайдена!`);
+        }
+
+        ctx.replyWithHTML(message.join(''), {
+          link_preview_options: { is_disabled: true },
+          reply_markup: { inline_keyboard: inlineKeyboard }
+        });
+      } catch (err) {
+        ctx.replyWithHTML(
+          `💢 <b>Упс!</b> Щось пішло не так!. Виникла помилка: <i>${err.message}</i>`
+        );
+      } finally {
+        ctx.scene.leave();
+      }
     });
 
     this.telegramService.registerBotScene(scene);
@@ -448,6 +506,10 @@ export class AppService {
 
   private async handlerCommandUpdate(ctx: any) {
     return ctx.scene.enter('update');
+  }
+
+  private async handlerCommandSearch(ctx: any) {
+    return ctx.scene.enter('search');
   }
 
   private async handlerCommandQuit(ctx: any) {
