@@ -97,7 +97,7 @@ pm2 logs open-petition-bot
 ### Docker Quick Start
 
 ```bash
-# Create custom docker compose file `compose.yaml`
+# Create custom docker compose file **compose.yaml**
 services:
   app:
     image: baklai/open-petition-bot:latest
