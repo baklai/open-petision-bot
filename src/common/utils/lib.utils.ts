@@ -1,14 +1,15 @@
-export const dateToStr = (value: Date, locale = 'uk-UA') => {
-  return value ? new Date(value).toLocaleDateString(locale) : value;
+export const dateToStr = (value: Date, locale = 'uk-UA', timeZone = 'Europe/Kyiv') => {
+  return value ? new Date(value).toLocaleDateString(locale, { timeZone }) : value;
 };
 
-export const dateTimeToStr = (value: Date, locale = 'uk-UA') => {
-  return value ? new Date(value).toLocaleString(locale) : value;
+export const dateTimeToStr = (value: Date, locale = 'uk-UA', timeZone = 'Europe/Kyiv') => {
+  return value ? new Date(value).toLocaleString(locale, { timeZone }) : value;
 };
 
-export const dateToLocaleStr = (value: Date, locale: 'uk-UA') => {
+export const dateToLocaleStr = (value: Date, locale: 'uk-UA', timeZone = 'Europe/Kyiv') => {
   return value
     ? new Date(value).toLocaleDateString(locale, {
+        timeZone,
         month: 'long',
         day: '2-digit',
         hour: '2-digit',
