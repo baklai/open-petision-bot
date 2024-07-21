@@ -42,11 +42,8 @@ npm run build
 # Build docker image
 docker compose build
 
-# Build docker multiplatform images
-docker compose build --builder multibuilder
-
-# Pushes images to the repository
-docker compose push
+# Build docker multiplatform images and Pushes images to the repository
+docker compose build --builder multibuilder --push
 ```
 
 If your cloud uses a different CPU architecture than your development
