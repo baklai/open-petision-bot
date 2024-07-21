@@ -50,7 +50,7 @@ docker compose build --push
 npm run start
 ```
 
-### PM2 Process Management Quick Start
+### PM2 Quick Start
 
 ```bash
 # Start application
@@ -72,7 +72,7 @@ pm2 delete ecosystem.config.js
 pm2 logs open-petition-bot
 ```
 
-### Docker Compose Quick Start
+### Docker Quick Start
 
 ```bash
 # Create custom docker compose file `compose.yaml`
