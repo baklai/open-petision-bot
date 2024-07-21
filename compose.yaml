@@ -13,10 +13,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    env_file: .env
     environment:
       - NODE_ENV=production
     ports:
       - 3000:3000
     restart: unless-stopped
     container_name: open-petition-bot
+    image: baklai/open-petition-bot:latest

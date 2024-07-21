@@ -36,7 +36,15 @@ npm run start:dev
 npm run build
 ```
 
-### Production
+## Build Docker images
+
+```bash
+# Start application
+
+docker compose build --push
+```
+
+### Quick Start
 
 ```bash
 npm run start
@@ -59,25 +67,34 @@ pm2 reload ecosystem.config.js
 
 # Delete application
 pm2 delete ecosystem.config.js
-```
 
-```bash
 # Logs application
-
 pm2 logs open-petition-bot
 ```
 
 ### Docker Compose Quick Start
 
 ```bash
-# Start application
+# Create custom docker compose file `compose.yaml`
+services:
+  app:
+    image: baklai/open-petition-bot:latest
+    env_file: .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    container_name: open-petition-bot
+```
 
-docker compose up --build -d
+```bash
+# Start application
+docker compose up -d
 ```
 
 ```bash
 # Logs application
-
 docker logs -f open-petition-bot
 ```
 
@@ -85,7 +102,6 @@ In the terminal, run the following command to stop the application.
 
 ```bash
 # Delete application
-
 docker compose down
 ```
 
