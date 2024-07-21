@@ -30,7 +30,7 @@ npm install
 npm run start:dev
 ```
 
-### Build
+### Build Production
 
 ```bash
 npm run build
