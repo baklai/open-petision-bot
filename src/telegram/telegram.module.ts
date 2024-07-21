@@ -2,6 +2,8 @@ import { DynamicModule, Global, Module } from '@nestjs/common';
 import { Context, Telegraf, Telegram, session } from 'telegraf';
 import { Update, UserFromGetMe } from 'telegraf/typings/core/types/typegram';
 
+import { dateTimeToStr } from 'src/common/utils/lib.utils';
+
 import { TelegramService } from './telegram.service';
 
 export class TContext extends Context {
@@ -65,7 +67,7 @@ export class TelegramModule {
               await next();
               const ms = Date.now() - start;
               console.info(
-                `LOG [BOT] DATE [${new Date().toLocaleString()}] USER [${ctx.userInfo.username}] ID [${ctx.userInfo.userID}] RESPONSE TIME [%sms]`,
+                `LOG [BOT] DATE [${dateTimeToStr(new Date())}] USER [${ctx.userInfo.username}] ID [${ctx.userInfo.userID}] RESPONSE TIME [%sms]`,
                 ms
               );
             });
