@@ -21,7 +21,7 @@ export class ScrapersService {
   ) {}
 
   // Запуск кожної години з 6 ранку до 6 вечора:
-  @Cron('0 6-18 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC' })
+  @Cron('0 6-18 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC+2' })
   async handleTaskScrapeActivePetition() {
     const mode = this.configService.get<string>('NODE_ENV');
 
@@ -42,7 +42,7 @@ export class ScrapersService {
   }
 
   // Раз на добу о 12 годині дня 30 хвилин:
-  @Cron('30 12 * * *', { name: 'scrape-petitions-in-process', timeZone: 'UTC' })
+  @Cron('30 12 * * *', { name: 'scrape-petitions-in-process', timeZone: 'UTC+2' })
   async handleTaskScrapeActivePetitionInProcess() {
     const mode = this.configService.get<string>('NODE_ENV');
     if (mode === 'development') return;
@@ -60,7 +60,7 @@ export class ScrapersService {
   }
 
   // Раз на три дні о 6 годині ранку:
-  @Cron('0 8 */3 * *', { name: 'scrape-petitions-processed', timeZone: 'UTC' })
+  @Cron('0 8 */3 * *', { name: 'scrape-petitions-processed', timeZone: 'UTC+2' })
   async handleTaskScrapeActivePetitionProcessed() {
     const mode = this.configService.get<string>('NODE_ENV');
     if (mode === 'development') return;
