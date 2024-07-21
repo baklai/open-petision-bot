@@ -39,8 +39,7 @@ npm run build
 ### Build Docker images
 
 ```bash
-# Start application
-
+# Build docker image and push service images
 docker compose build --push
 ```
 
