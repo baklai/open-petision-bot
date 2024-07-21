@@ -36,7 +36,7 @@ npm run start:dev
 npm run build
 ```
 
-## Build Docker images
+### Build Docker images
 
 ```bash
 # Start application
