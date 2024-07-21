@@ -25,8 +25,6 @@ export class ScrapersService {
   async handleTaskScrapeActivePetition() {
     const mode = this.configService.get<string>('NODE_ENV');
 
-    console.log('mode', mode);
-
     if (mode === 'development') return;
 
     console.info(
