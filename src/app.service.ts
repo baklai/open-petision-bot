@@ -651,8 +651,6 @@ export class AppService {
           .skip(offset)
           .limit(1);
 
-    console.log('offset', offset, petition?.number);
-
     const message = [];
 
     if (!petition) {
