@@ -22,7 +22,7 @@ export class ScrapersService {
 
   // Запуск кожної години з 6 ранку до 6 вечора:
   @Cron('0 6-18 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC+2' })
-  async handleTaskScrapeActivePetition() {
+  async handleTaskScrapePetitionActive() {
     const mode = this.configService.get<string>('NODE_ENV');
 
     if (mode === 'development') return;
@@ -41,7 +41,7 @@ export class ScrapersService {
 
   // Раз на добу о 12 годині дня 30 хвилин:
   @Cron('30 12 * * *', { name: 'scrape-petitions-in-process', timeZone: 'UTC+2' })
-  async handleTaskScrapeActivePetitionInProcess() {
+  async handleTaskScrapePetitionInProcess() {
     const mode = this.configService.get<string>('NODE_ENV');
     if (mode === 'development') return;
 
@@ -59,7 +59,7 @@ export class ScrapersService {
 
   // Раз на три дні о 6 годині ранку:
   @Cron('0 8 */3 * *', { name: 'scrape-petitions-processed', timeZone: 'UTC+2' })
-  async handleTaskScrapeActivePetitionProcessed() {
+  async handleTaskScrapePetitionProcessed() {
     const mode = this.configService.get<string>('NODE_ENV');
     if (mode === 'development') return;
 
@@ -78,7 +78,19 @@ export class ScrapersService {
   async handlePetitionScrape({ status = 'active', sort = 'date', order = 'desc' }) {
     const petitions = await this.scraper({ status, sort, order });
 
-    const newPetitions = await this.upsertPetitions(petitions);
+    const bulkOps = petitions.map((doc: any) => ({
+      updateOne: {
+        filter: { number: doc.number },
+        update: { $set: doc },
+        upsert: true
+      }
+    }));
+
+    const bulkWriteResult = await this.petitionModel.bulkWrite(bulkOps);
+
+    const newPetitions = await this.petitionModel.find({
+      _id: { $in: Object.values(bulkWriteResult.upsertedIds).map(id => id._id) }
+    });
 
     if (status === 'active') {
       newPetitions.forEach(async petition => {
@@ -89,24 +101,6 @@ export class ScrapersService {
         });
       });
     }
-  }
-
-  private async upsertPetitions(docs: any) {
-    const bulkOps = docs.map((doc: any) => ({
-      updateOne: {
-        filter: { number: doc.number },
-        update: { $set: doc },
-        upsert: true
-      }
-    }));
-
-    const result = await this.petitionModel.bulkWrite(bulkOps);
-
-    const newlyCreatedDocs = await this.petitionModel.find({
-      _id: { $in: Object.values(result.upsertedIds).map(id => id._id) }
-    });
-
-    return newlyCreatedDocs;
   }
 
   private async sendPetition(userID: number, petition: Record<string, any>) {

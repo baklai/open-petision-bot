@@ -508,10 +508,6 @@ export class AppService {
     return ctx.scene.enter('update');
   }
 
-  private async handlerCommandSearch(ctx: any) {
-    return ctx.scene.enter('search');
-  }
-
   private async handlerCommandQuit(ctx: any) {
     return ctx.scene.enter('quit');
   }
@@ -603,6 +599,10 @@ export class AppService {
         keyboard: MAIN_KEYBOARD
       }
     });
+  }
+
+  private async handlerCommandSearch(ctx: any) {
+    return ctx.scene.enter('search');
   }
 
   private async handlerCommandPetition(ctx: any) {
