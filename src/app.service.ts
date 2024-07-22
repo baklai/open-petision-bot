@@ -642,14 +642,16 @@ export class AppService {
     const [petition] = selected
       ? await this.petitionModel
           .find({ number: { $in: user?.petitions || [] } })
-          // .sort({ createdAt: -1 })
+          .sort({ createdAt: -1, _id: 1 })
           .skip(offset)
           .limit(1)
       : await this.petitionModel
           .find({ status: 'Триває збір підписів' })
-          // .sort({ createdAt: -1 })
+          .sort({ createdAt: -1, _id: 1 })
           .skip(offset)
           .limit(1);
+
+    console.log('offset', offset, petition?.number);
 
     const message = [];
 
