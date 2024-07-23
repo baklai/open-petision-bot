@@ -93,7 +93,7 @@ export class ScrapersService {
     });
 
     if (status === 'active') {
-      newPetitions.forEach(async petition => {
+      for (const petition of newPetitions) {
         const users = await this.userModel.find({}).select({ userID: 1 });
 
         const petitionDetails = await this.scraperDetails(petition.link, petition.number);
@@ -104,12 +104,33 @@ export class ScrapersService {
           { new: true }
         );
 
-        users.forEach(async ({ userID }) => {
+        for (const { userID } of users) {
           await this.sendPetition(userID, updatePetition);
-        });
+        }
 
         await sleep(randomInt(5000, 10000));
-      });
+      }
+    }
+  }
+
+  async handlePetitionDetailsScrape() {
+    const petitions = await this.petitionModel.find({
+      $and: [
+        { status: 'Триває збір підписів' },
+        { $or: [{ text: { $exists: false } }, { creator: { $exists: false } }] }
+      ]
+    });
+
+    for (const petition of petitions) {
+      const petitionDetails = await this.scraperDetails(petition.link, petition.number);
+
+      await this.petitionModel.findOneAndUpdate(
+        { number: petitionDetails.number },
+        { $set: { text: petitionDetails.text, creator: petitionDetails.creator } },
+        { new: true }
+      );
+
+      await sleep(randomInt(30000, 60000));
     }
   }
 

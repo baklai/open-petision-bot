@@ -250,15 +250,7 @@ export class AppService {
         const petition = await this.petitionModel.findOne({ number: ctx.session.message });
 
         if (petition) {
-          message.push(`<blockquote>`);
-          message.push(`# ${petition?.tag}\n\n`);
-          message.push(`<b><a href="${petition.link}">${petition?.title}</a></b>\n\n`);
-          message.push(`</blockquote>\n`);
-          message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
-          message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
-          message.push(`▫️ <b>Кількість голосів</b>: ${petition?.counts}\n`);
-          message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.publishedAt}\n\n`);
-          message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
+          message.push(...petitionMessage(petition));
 
           inlineKeyboard.push([{ text: '📄 Переглянути петицію', url: petition.link }]);
           inlineKeyboard.push([
@@ -356,20 +348,26 @@ export class AppService {
           inline_keyboard: [
             [
               {
-                text: 'ТРИВАЄ ЗБІР ПІДПИСІВ',
+                text: 'ПЕТИЦІЇ: ТРИВАЄ ЗБІР ПІДПИСІВ',
                 callback_data: JSON.stringify({ key: 'update:petition:active' })
               }
             ],
             [
               {
-                text: 'НА РОЗГЛЯДІ',
+                text: 'ПЕТИЦІЇ: НА РОЗГЛЯДІ',
                 callback_data: JSON.stringify({ key: 'update:petition:inprocess' })
               }
             ],
             [
               {
-                text: 'З ВІДПОВІДДЮ',
+                text: 'ПЕТИЦІЇ: З ВІДПОВІДДЮ',
                 callback_data: JSON.stringify({ key: 'update:petition:processed' })
+              }
+            ],
+            [
+              {
+                text: 'ОНОВИТИ ДЕТАЛІ АКТИВНИХ ПЕТИЦІЙ',
+                callback_data: JSON.stringify({ key: 'update:petition:details' })
               }
             ]
           ]
@@ -406,6 +404,12 @@ export class AppService {
           this.scrapersService.handlePetitionScrape({ status: 'processed' });
           await ctx.replyWithHTML(
             `👌 Добре, запущено оновлення переліку петицій! Це може зайняти деякий час!`
+          );
+          break;
+        case 'update:petition:details':
+          this.scrapersService.handlePetitionDetailsScrape();
+          await ctx.replyWithHTML(
+            `👌 Добре, запущено оновлення деталій петицій! Це може зайняти деякий час!`
           );
           break;
         default:
