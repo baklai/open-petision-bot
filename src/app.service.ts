@@ -540,48 +540,64 @@ export class AppService {
   }
 
   private async handlerCommandStatistic(ctx: TContext) {
-    const usersCount = await this.userModel.countDocuments();
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
-    const user = await this.userModel.findOne({ userID: ctx.userInfo.userID });
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
 
-    const petitionCount = await this.petitionModel.countDocuments();
-
-    const petitionStatusCount = await this.petitionModel.aggregate([
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 }
+    const [
+      usersCount,
+      user,
+      petitionCount,
+      petitionCountToday,
+      petitionStatusCount,
+      petitionTagCount
+    ] = await Promise.all([
+      this.userModel.countDocuments(),
+      this.userModel.findOne({ userID: ctx.userInfo.userID }),
+      this.petitionModel.countDocuments(),
+      this.petitionModel.countDocuments({
+        createdAt: { $gte: startOfDay, $lt: endOfDay }
+      }),
+      this.petitionModel.aggregate([
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            status: '$_id',
+            count: 1
+          }
         }
-      },
-      {
-        $project: {
-          _id: 0,
-          status: '$_id',
-          count: 1
+      ]),
+      this.petitionModel.aggregate([
+        {
+          $group: {
+            _id: '$tag',
+            count: { $sum: 1 }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            tag: '$_id',
+            count: 1
+          }
         }
-      }
-    ]);
-
-    const petitionTagCount = await this.petitionModel.aggregate([
-      {
-        $group: {
-          _id: '$tag',
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $project: {
-          _id: 0,
-          tag: '$_id',
-          count: 1
-        }
-      }
+      ])
     ]);
 
     const message = [
       '📊 <b>Статистика додатку</b>\n\n',
       user?.isAdmin ? `👤 <b>Кількість користувачів: ${usersCount}</b>\n\n` : '',
       `⭐️ <b>Обрані Петиції:</b> ${user?.petitions?.length || 0}`,
+      '\n\n',
+      `🔖 <b>Петицій сьогодні:</b> ${petitionCountToday || 0}`,
       '\n\n',
       `🔖 <b>Петицій загалом:</b> ${petitionCount || 0}`,
       '\n\n',
