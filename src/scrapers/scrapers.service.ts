@@ -9,7 +9,7 @@ import * as cheerio from 'cheerio';
 import { User } from 'src/schemas/user.schema';
 import { Petition } from 'src/schemas/petition.schema';
 import { TelegramService } from 'src/telegram/telegram.service';
-import { dateTimeToStr, randomInt, sleep } from 'src/common/utils/lib.utils';
+import { dateTimeToStr, petitionMessage, randomInt, sleep } from 'src/common/utils/lib.utils';
 
 @Injectable()
 export class ScrapersService {
@@ -96,9 +96,19 @@ export class ScrapersService {
       newPetitions.forEach(async petition => {
         const users = await this.userModel.find({}).select({ userID: 1 });
 
+        const petitionDetails = await this.scraperDetails(petition.link, petition.number);
+
+        const updatePetition = await this.petitionModel.findOneAndUpdate(
+          { number: petitionDetails.number },
+          { $set: { text: petitionDetails.text, creator: petitionDetails.creator } },
+          { new: true }
+        );
+
         users.forEach(async ({ userID }) => {
-          await this.sendPetition(userID, petition);
+          await this.sendPetition(userID, updatePetition);
         });
+
+        await sleep(randomInt(5000, 10000));
       });
     }
   }
@@ -107,15 +117,7 @@ export class ScrapersService {
     const message = [];
 
     try {
-      message.push(`<blockquote>`);
-      message.push(`# ${petition?.tag}\n\n`);
-      message.push(`<b><a href="${petition.link}">${petition?.title}</a></b>\n\n`);
-      message.push(`</blockquote>\n`);
-      message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
-      message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
-      message.push(`▫️ <b>Кількість голосів</b>: ${petition?.counts}\n`);
-      message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.publishedAt}\n\n`);
-      message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
+      message.push(...petitionMessage(petition));
 
       const inlineKeyboard = [
         [{ text: '📄 Переглянути петицію', url: petition.link }],
@@ -230,6 +232,27 @@ export class ScrapersService {
       console.error('Error fetching the page:', err);
     } finally {
       return petitions;
+    }
+  }
+
+  private async scraperDetails(baseUrl: string, number: string) {
+    try {
+      const { data } = await axios.get(baseUrl);
+
+      const $ = cheerio.load(data);
+
+      const [petDateCreator] = $('div.pet_date');
+
+      const creator = $(petDateCreator).text()?.trim()?.split(':')[1];
+
+      const text = $('div.article').text()?.replace(/\s+/g, ' ')?.trim();
+
+      console.info(`LOG [SCRAPER] DATE [${dateTimeToStr(new Date())}] NUMBER [${number}]`);
+
+      return { number, creator, text };
+    } catch (err) {
+      console.error('Error fetching the page:', err);
+      return { number: '', creator: '', text: '' };
     }
   }
 }

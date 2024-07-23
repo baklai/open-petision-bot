@@ -32,3 +32,21 @@ export const randomInt = (min: number, max: number) => {
   max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
+
+export const petitionMessage = (petition: Record<string, any>) => {
+  const message = [];
+  message.push(`<blockquote>`);
+  message.push(`# ${petition?.tag}\n\n`);
+  message.push(`<b><a href="${petition?.link}">${petition?.title}</a></b>\n\n`);
+  message.push(petition?.text ? `${petition.text}"\n` : '\n');
+  message.push(`</blockquote>\n`);
+  message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
+  message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
+  message.push(`▫️ <b>Кількість голосів</b>: ${petition?.counts}\n`);
+  message.push(petition?.creator ? `▫️ <b>Автор (ініціатор)</b>: ${petition?.creator}\n` : '');
+  message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.publishedAt}\n\n`);
+  message.push(petition?.answeredAt ? `▫️ <b>Дата відповіді</b>: ${petition?.answeredAt}\n` : '');
+  message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
+
+  return message;
+};
