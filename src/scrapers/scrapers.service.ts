@@ -256,9 +256,9 @@ export class ScrapersService {
     }
   }
 
-  private async scraperDetails(baseUrl: string, number: string) {
+  private async scraperDetails(url: string, number: string) {
     try {
-      const { data } = await axios.get(baseUrl);
+      const { data } = await axios.get(url);
 
       const $ = cheerio.load(data);
 
@@ -268,7 +268,9 @@ export class ScrapersService {
 
       const text = $('div.article').text()?.replace(/\s+/g, ' ')?.trim();
 
-      console.info(`LOG [SCRAPER] DATE [${dateTimeToStr(new Date())}] NUMBER [${number}]`);
+      console.info(
+        `LOG [SCRAPER DETAILS] DATE [${dateTimeToStr(new Date())}] NUMBER [${number}] URL [${url}]`
+      );
 
       return { number, creator, text };
     } catch (err) {
