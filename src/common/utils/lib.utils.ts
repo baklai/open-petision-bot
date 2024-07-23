@@ -33,12 +33,20 @@ export const randomInt = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
+export const limitText = (text: string, maxLength: number) => {
+  if (!text) return '';
+  if (text.length > maxLength) {
+    return text.substring(0, maxLength - 3) + '...';
+  }
+  return text;
+};
+
 export const petitionMessage = (petition: Record<string, any>) => {
   const message = [];
   message.push(`<blockquote>`);
   message.push(`# ${petition?.tag}\n\n`);
   message.push(`<b><a href="${petition?.link}">${petition?.title}</a></b>\n\n`);
-  message.push(petition?.text ? `${petition.text}"\n` : '\n');
+  message.push(petition?.text ? `${limitText(petition.text, 500)}"\n` : '\n');
   message.push(`</blockquote>\n`);
   message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
   message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
