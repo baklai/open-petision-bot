@@ -76,7 +76,7 @@ export class ScrapersService {
   }
 
   async handlePetitionScrape({ status = 'active', sort = 'date', order = 'desc' }) {
-    const petitions = await this.scraper({ status, sort, order });
+    const petitions = await this.scrapePetitions({ status, sort, order });
 
     const bulkOps = petitions.map((doc: any) => ({
       updateOne: {
@@ -96,7 +96,7 @@ export class ScrapersService {
       for (const petition of newPetitions) {
         const users = await this.userModel.find({}).select({ userID: 1 });
 
-        const petitionDetails = await this.scraperDetails(petition.link, petition.number);
+        const petitionDetails = await this.scrapePetition(petition.link, petition.number);
 
         const updatePetition = await this.petitionModel.findOneAndUpdate(
           { number: petitionDetails.number },
@@ -122,7 +122,7 @@ export class ScrapersService {
     });
 
     for (const petition of petitions) {
-      const petitionDetails = await this.scraperDetails(petition.link, petition.number);
+      const petitionDetails = await this.scrapePetition(petition.link, petition.number);
 
       await this.petitionModel.findOneAndUpdate(
         { number: petitionDetails.number },
@@ -167,7 +167,30 @@ export class ScrapersService {
     }
   }
 
-  private async scraper({ status = 'active', sort = 'date', order = 'desc' }) {
+  private async scrapePetition(url: string, number: string) {
+    try {
+      const { data } = await axios.get(url);
+
+      const $ = cheerio.load(data);
+
+      const [petDateCreator] = $('div.pet_date');
+
+      const creator = $(petDateCreator).text()?.trim()?.split(':')[1];
+
+      const text = $('div.article').text()?.replace(/\s+/g, ' ')?.trim();
+
+      console.info(
+        `LOG [SCRAPER DETAILS] DATE [${dateTimeToStr(new Date())}] NUMBER [${number}] URL [${url}]`
+      );
+
+      return { number, creator, text };
+    } catch (err) {
+      console.error('Error fetching the page:', err);
+      return { number: '', creator: '', text: '' };
+    }
+  }
+
+  private async scrapePetitions({ status = 'active', sort = 'date', order = 'desc' }) {
     const petitions = [];
     try {
       const baseUrl = 'https://petition.president.gov.ua';
@@ -253,29 +276,6 @@ export class ScrapersService {
       console.error('Error fetching the page:', err);
     } finally {
       return petitions;
-    }
-  }
-
-  private async scraperDetails(url: string, number: string) {
-    try {
-      const { data } = await axios.get(url);
-
-      const $ = cheerio.load(data);
-
-      const [petDateCreator] = $('div.pet_date');
-
-      const creator = $(petDateCreator).text()?.trim()?.split(':')[1];
-
-      const text = $('div.article').text()?.replace(/\s+/g, ' ')?.trim();
-
-      console.info(
-        `LOG [SCRAPER DETAILS] DATE [${dateTimeToStr(new Date())}] NUMBER [${number}] URL [${url}]`
-      );
-
-      return { number, creator, text };
-    } catch (err) {
-      console.error('Error fetching the page:', err);
-      return { number: '', creator: '', text: '' };
     }
   }
 }
