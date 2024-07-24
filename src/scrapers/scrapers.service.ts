@@ -177,7 +177,7 @@ export class ScrapersService {
 
       const creator = $(petDateCreator).text()?.trim()?.split(':')[1];
 
-      const text = $('div.article').text()?.replace(/\s+/g, ' ')?.trim();
+      const text = $('div#pet-tab-1').find('div.article').text()?.replace(/\s+/g, ' ')?.trim();
 
       console.info(
         `LOG [SCRAPER DETAILS] DATE [${dateTimeToStr(new Date())}] NUMBER [${number}] URL [${url}]`
