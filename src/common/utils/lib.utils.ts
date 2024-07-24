@@ -43,10 +43,11 @@ export const limitText = (text: string, maxLength: number) => {
 
 export const petitionMessage = (petition: Record<string, any>) => {
   const message = [];
-  message.push(`<blockquote>`);
-  message.push(`# ${petition?.tag}\n\n`);
-  message.push(`<b><a href="${petition?.link}">${petition?.title}</a></b>\n\n`);
-  message.push(petition?.text ? `${limitText(petition.text, 500)}"\n` : '\n');
+
+  message.push(`# ${petition?.tag}\n`);
+  message.push(`<blockquote expandable>`);
+  message.push(`<b><a href="${petition?.link}">${petition?.title}</a></b>\n`);
+  message.push(petition?.text ? `${petition.text}"\n` : '\n');
   message.push(`</blockquote>\n`);
   message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
   message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
