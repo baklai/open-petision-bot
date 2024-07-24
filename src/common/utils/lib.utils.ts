@@ -33,10 +33,14 @@ export const randomInt = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
-export const limitText = (text: string, maxLength: number) => {
+export const limitText = (text: string, maxLength: number, suffix: string = '...') => {
   if (!text) return '';
   if (text.length > maxLength) {
-    return text.substring(0, maxLength - 3) + '...';
+    const trimmedText = text.substring(0, maxLength - suffix.length);
+    return (
+      trimmedText.substring(0, Math.min(trimmedText.length, trimmedText.lastIndexOf(' '))) +
+      ` ${suffix} `
+    );
   }
   return text;
 };
@@ -47,7 +51,7 @@ export const petitionMessage = (petition: Record<string, any>) => {
   message.push(`# ${petition?.tag}\n`);
   message.push(`<blockquote expandable>`);
   message.push(`<b><a href="${petition?.link}">${petition?.title}</a></b>\n`);
-  message.push(petition?.text ? `${petition.text}"\n` : '\n');
+  message.push(petition?.text ? `${limitText(petition.text, 600)}\n` : '\n');
   message.push(`</blockquote>\n`);
   message.push(`▫️ <b>Номер петиції</b>: ${petition?.number}\n`);
   message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);

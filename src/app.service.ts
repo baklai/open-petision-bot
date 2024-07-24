@@ -83,29 +83,29 @@ export class AppService {
   private async onСallbackQuery(ctx: any) {
     const callbackData = ctx.callbackQuery.data;
 
-    const { key, callback } = JSON.parse(callbackData);
+    const { key, value } = JSON.parse(callbackData);
 
     switch (key) {
       case 'petition:selected':
-        await this.handlerSelectedPetition(ctx, callback);
+        await this.handlerSelectedPetition(ctx, value);
         break;
       case 'petition:unselected':
-        await this.handlerUnSelectedPetition(ctx, callback);
+        await this.handlerUnSelectedPetition(ctx, value);
         break;
       case 'pagination:first':
-        await this.handlerPaginationPetition(ctx, callback);
+        await this.handlerPaginationPetition(ctx, value);
         break;
       case 'pagination:prev':
-        await this.handlerPaginationPetition(ctx, callback);
+        await this.handlerPaginationPetition(ctx, value);
         break;
       case 'pagination:current':
-        await this.handlerPaginationPetition(ctx, callback);
+        await this.handlerPaginationPetition(ctx, value);
         break;
       case 'pagination:next':
-        await this.handlerPaginationPetition(ctx, callback);
+        await this.handlerPaginationPetition(ctx, value);
         break;
       case 'pagination:last':
-        await this.handlerPaginationPetition(ctx, callback);
+        await this.handlerPaginationPetition(ctx, value);
         break;
       default:
         return await ctx.replyWithHTML('💢 <b>Упс!</b> Щось пішло не так!', {});
@@ -629,29 +629,29 @@ export class AppService {
     await this.handlerPaginationPetition(ctx, '0:0:0');
   }
 
-  private async handlerSelectedPetition(ctx: any, callback: string) {
+  private async handlerSelectedPetition(ctx: any, value: string) {
     await this.userModel.findOneAndUpdate(
       { userID: ctx.userInfo.userID },
-      { $addToSet: { petitions: callback } },
+      { $addToSet: { petitions: value } },
       { new: true }
     );
 
-    return await ctx.answerCbQuery(`Петицію ${callback} додано до обраного!`, { show_alert: true });
+    return await ctx.answerCbQuery(`Петицію ${value} додано до обраного!`, { show_alert: true });
   }
 
-  private async handlerUnSelectedPetition(ctx: any, callback: string) {
+  private async handlerUnSelectedPetition(ctx: any, value: string) {
     await this.userModel.findOneAndUpdate(
       { userID: ctx.userInfo.userID },
-      { $pull: { petitions: callback } },
+      { $pull: { petitions: value } },
       { new: true }
     );
 
-    await ctx.answerCbQuery(`Петицію ${callback} видалено з обраного!`, { show_alert: true });
+    await ctx.answerCbQuery(`Петицію ${value} видалено з обраного!`, { show_alert: true });
     await this.handlerPaginationPetition(ctx, '0:1:1');
   }
 
-  private async handlerPaginationPetition(ctx: any, callback: string) {
-    const [offset = 0, selected = 0, editable = 0] = callback.split(':').map(Number);
+  private async handlerPaginationPetition(ctx: any, value: string) {
+    const [offset = 0, selected = 0, editable = 0] = value.split(':').map(Number);
 
     const user = selected ? await this.userModel.findOne({ userID: ctx.userInfo.userID }) : null;
 
@@ -719,8 +719,8 @@ export class AppService {
         {
           text: selected ? '🚫 Видалити з обраного' : '⭐️ Додати до обраного',
           callback_data: selected
-            ? JSON.stringify({ key: 'petition:unselected', callback: petition?.number })
-            : JSON.stringify({ key: 'petition:selected', callback: petition?.number })
+            ? JSON.stringify({ key: 'petition:unselected', value: petition?.number })
+            : JSON.stringify({ key: 'petition:selected', value: petition?.number })
         }
       ],
       [
@@ -728,35 +728,35 @@ export class AppService {
           text: '<<',
           callback_data: JSON.stringify({
             key: 'pagination:first',
-            callback: `0:${selected}:1`
+            value: `0:${selected}:1`
           })
         },
         {
           text: '<',
           callback_data: JSON.stringify({
             key: 'pagination:prev',
-            callback: `${offset > 0 ? offset - 1 : 0}:${selected}:1`
+            value: `${offset > 0 ? offset - 1 : 0}:${selected}:1`
           })
         },
         {
           text: `${offset + 1} / ${petitionsCount}`,
           callback_data: JSON.stringify({
             key: 'pagination:current',
-            callback: `${offset}:${selected}:1`
+            value: `${offset}:${selected}:1`
           })
         },
         {
           text: '>',
           callback_data: JSON.stringify({
             key: 'pagination:next',
-            callback: `${offset < petitionsCount - 1 ? offset + 1 : petitionsCount - 1}:${selected}:1`
+            value: `${offset < petitionsCount - 1 ? offset + 1 : petitionsCount - 1}:${selected}:1`
           })
         },
         {
           text: '>>',
           callback_data: JSON.stringify({
             key: 'pagination:last',
-            callback: `${petitionsCount - 1}:${selected}:1`
+            value: `${petitionsCount - 1}:${selected}:1`
           })
         }
       ]
