@@ -53,7 +53,8 @@ export const petitionMessage = (petition: Record<string, any>) => {
   message.push(`▫️ <b>Статус</b>: ${petition?.status}\n`);
   message.push(`▫️ <b>Кількість голосів</b>: ${petition?.counts}\n`);
   message.push(petition?.creator ? `▫️ <b>Автор (ініціатор)</b>: ${petition?.creator}\n` : '');
-  message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.publishedAt}\n\n`);
+  message.push(`▫️ <b>Дата оприлюднення</b>: ${petition?.publishedAt}\n`);
+  message.push(`▫️ <b>${petition?.timer}</b>\n\n`);
   message.push(petition?.answeredAt ? `▫️ <b>Дата відповіді</b>: ${petition?.answeredAt}\n` : '');
   message.push(`<i>Дата оновлення: ${dateTimeToStr(petition?.updatedAt)}</i>\n\n`);
 
