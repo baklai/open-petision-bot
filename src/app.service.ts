@@ -16,7 +16,7 @@ import {
   OPERATION_COMMANDS,
   SYSTEM_COMMANDS
 } from './common/constants/commands.constant';
-import { dateTimeToStr, petitionMessage } from './common/utils/lib.utils';
+import { petitionMessage } from './common/utils/lib.utils';
 import { MAIN_KEYBOARD } from './common/constants/keyboards.constant';
 
 @Injectable()
@@ -348,25 +348,25 @@ export class AppService {
           inline_keyboard: [
             [
               {
-                text: 'ПЕТИЦІЇ: ТРИВАЄ ЗБІР ПІДПИСІВ',
+                text: 'СТАТУС: ТРИВАЄ ЗБІР ПІДПИСІВ',
                 callback_data: JSON.stringify({ key: 'update:petition:active' })
               }
             ],
             [
               {
-                text: 'ПЕТИЦІЇ: НА РОЗГЛЯДІ',
+                text: 'СТАТУС: НА РОЗГЛЯДІ',
                 callback_data: JSON.stringify({ key: 'update:petition:inprocess' })
               }
             ],
             [
               {
-                text: 'ПЕТИЦІЇ: З ВІДПОВІДДЮ',
+                text: 'СТАТУС: З ВІДПОВІДДЮ',
                 callback_data: JSON.stringify({ key: 'update:petition:processed' })
               }
             ],
             [
               {
-                text: 'ОНОВИТИ ДЕТАЛІ АКТИВНИХ ПЕТИЦІЙ',
+                text: 'ОНОВИТИ ДЕТАЛІ ПЕТИЦІЙ',
                 callback_data: JSON.stringify({ key: 'update:petition:details' })
               }
             ]
@@ -546,51 +546,44 @@ export class AppService {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    const [
-      usersCount,
-      user,
-      petitionCount,
-      petitionCountToday,
-      petitionStatusCount,
-      petitionTagCount
-    ] = await Promise.all([
-      this.userModel.countDocuments(),
-      this.userModel.findOne({ userID: ctx.userInfo.userID }),
-      this.petitionModel.countDocuments(),
-      this.petitionModel.countDocuments({
-        createdAt: { $gte: startOfDay, $lt: endOfDay }
-      }),
-      this.petitionModel.aggregate([
-        {
-          $group: {
-            _id: '$status',
-            count: { $sum: 1 }
+    const [usersCount, user, petitionCountToday, petitionStatusCount, petitionTagCount] =
+      await Promise.all([
+        this.userModel.countDocuments(),
+        this.userModel.findOne({ userID: ctx.userInfo.userID }),
+        this.petitionModel.countDocuments({
+          createdAt: { $gte: startOfDay, $lt: endOfDay }
+        }),
+        this.petitionModel.aggregate([
+          {
+            $group: {
+              _id: '$status',
+              count: { $sum: 1 }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              status: '$_id',
+              count: 1
+            }
           }
-        },
-        {
-          $project: {
-            _id: 0,
-            status: '$_id',
-            count: 1
+        ]),
+        this.petitionModel.aggregate([
+          {
+            $group: {
+              _id: '$tag',
+              count: { $sum: 1 }
+            }
+          },
+          {
+            $project: {
+              _id: 0,
+              tag: '$_id',
+              count: 1
+            }
           }
-        }
-      ]),
-      this.petitionModel.aggregate([
-        {
-          $group: {
-            _id: '$tag',
-            count: { $sum: 1 }
-          }
-        },
-        {
-          $project: {
-            _id: 0,
-            tag: '$_id',
-            count: 1
-          }
-        }
-      ])
-    ]);
+        ])
+      ]);
 
     const message = [
       '📊 <b>Статистика додатку</b>\n\n',
@@ -598,8 +591,6 @@ export class AppService {
       `⭐️ <b>Обрані Петиції:</b> ${user?.petitions?.length || 0}`,
       '\n\n',
       `🔖 <b>Петицій сьогодні:</b> ${petitionCountToday || 0}`,
-      '\n\n',
-      `🔖 <b>Петицій загалом:</b> ${petitionCount || 0}`,
       '\n\n',
       `🔖 <b>Петиції за статусами:</b>\n`,
       ...petitionStatusCount.map((item: any) => `<i> ▫️ ${item.status}: ${item.count}</i>\n`),

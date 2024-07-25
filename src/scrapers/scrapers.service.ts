@@ -21,7 +21,7 @@ export class ScrapersService {
   ) {}
 
   // Запуск кожної години з 6 ранку до 6 вечора:
-  @Cron('0 6-18 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC+2' })
+  @Cron('0 6-19 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC+2' })
   async handleTaskScrapePetitionActive() {
     const mode = this.configService.get<string>('NODE_ENV');
 
@@ -115,10 +115,7 @@ export class ScrapersService {
 
   async handlePetitionDetailsScrape() {
     const petitions = await this.petitionModel.find({
-      $and: [
-        { status: 'Триває збір підписів' },
-        { $or: [{ text: { $exists: false } }, { creator: { $exists: false } }] }
-      ]
+      $or: [{ text: { $exists: false } }, { creator: { $exists: false } }]
     });
 
     for (const petition of petitions) {
