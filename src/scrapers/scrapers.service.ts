@@ -21,56 +21,54 @@ export class ScrapersService {
   ) {}
 
   // Запуск кожної години з 6 ранку до 6 вечора:
-  @Cron('0 6-19 * * *', { name: 'scrape-petitions-active', timeZone: 'UTC+2' })
+  @Cron('0 6-19 * * *', { name: 'SCRAPE-PETITIONS-ACTIVE', timeZone: 'UTC+2' })
   async handleTaskScrapePetitionActive() {
     const mode = this.configService.get<string>('NODE_ENV');
 
     if (mode === 'development') return;
 
-    console.info(
-      `LOG [CRON] NAME [scrape-petitions-active] STATUS [Running] DATE [${dateTimeToStr(new Date())}]`
-    );
-
     // Рандомна хвилина запуску з 0 до 15 хвилини
     const delay = Math.floor(Math.random() * 16) * 60 * 1000;
 
     setTimeout(async () => {
+      console.info(
+        `LOG [CRON] NAME [SCRAPE-PETITIONS-ACTIVE] STATUS [Running] DATE [${dateTimeToStr(new Date())}]`
+      );
       await this.handlePetitionScrape({ status: 'active', sort: 'date', order: 'desc' });
     }, delay);
   }
 
   // Раз на добу о 12 годині дня 30 хвилин:
-  @Cron('30 12 * * *', { name: 'scrape-petitions-in-process', timeZone: 'UTC+2' })
+  @Cron('30 12 * * *', { name: 'SCRAPE-PETITIONS-IN-PROCESS', timeZone: 'UTC+2' })
   async handleTaskScrapePetitionInProcess() {
     const mode = this.configService.get<string>('NODE_ENV');
     if (mode === 'development') return;
-
-    console.info(
-      `LOG [CRON] NAME [scrape-petitions-in-process] STATUS [Running] DATE [${dateTimeToStr(new Date())}]`
-    );
 
     // Рандомна хвилина запуску з 0 до 15 хвилини
     const delay = Math.floor(Math.random() * 16) * 60 * 1000;
 
     setTimeout(async () => {
+      console.info(
+        `LOG [CRON] NAME [SCRAPE-PETITIONS-IN-PROCESS] STATUS [Running] DATE [${dateTimeToStr(new Date())}]`
+      );
+
       await this.handlePetitionScrape({ status: 'in_process', sort: 'date', order: 'desc' });
     }, delay);
   }
 
   // Раз на три дні о 6 годині ранку:
-  @Cron('0 8 */3 * *', { name: 'scrape-petitions-processed', timeZone: 'UTC+2' })
+  @Cron('0 8 */3 * *', { name: 'SCRAPE-PETITIONS-PROCESSED', timeZone: 'UTC+2' })
   async handleTaskScrapePetitionProcessed() {
     const mode = this.configService.get<string>('NODE_ENV');
     if (mode === 'development') return;
-
-    console.info(
-      `LOG [CRON] NAME [scrape-petitions-processed] STATUS [Running] DATE [${dateTimeToStr(new Date())}]`
-    );
 
     // Рандомна хвилина запуску з 0 до 15 хвилини
     const delay = Math.floor(Math.random() * 16) * 60 * 1000;
 
     setTimeout(async () => {
+      console.info(
+        `LOG [CRON] NAME [SCRAPE-PETITIONS-PROCESSED] STATUS [Running] DATE [${dateTimeToStr(new Date())}]`
+      );
       await this.handlePetitionScrape({ status: 'processed', sort: 'date', order: 'desc' });
     }, delay);
   }
