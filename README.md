@@ -122,7 +122,7 @@ docker logs -f open-petition-bot
 
 ```bash
 # Restart application
-docker stop open-petition-bot && docker rm open-petition-bot && docker rmi baklai/open-petition-bot && docker compose up -d && docker logs -f open-petition-bot
+docker compose down && docker rmi baklai/open-petition-bot && docker compose up -d && docker logs -f open-petition-bot
 ```
 
 In the terminal, run the following command to stop the application.

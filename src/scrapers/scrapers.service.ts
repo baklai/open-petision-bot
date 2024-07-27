@@ -175,7 +175,7 @@ export class ScrapersService {
       const text = $('div#pet-tab-1').find('div.article').text()?.replace(/\s+/g, ' ')?.trim();
 
       console.info(
-        `LOG [SCRAPER DETAILS] DATE [${dateTimeToStr(new Date())}] NUMBER [${number}] URL [${url}]`
+        `LOG [SCRAPE DETAILS] DATE [${dateTimeToStr(new Date())}] NUMBER [${number}] URL [${url}]`
       );
 
       return { number, creator, text };
