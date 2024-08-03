@@ -117,7 +117,7 @@ docker compose up -d
 
 ```bash
 # Logs application
-docker logs -f open-petition-bot
+docker logs --tail 30 -f open-petition-bot
 ```
 
 ```bash
