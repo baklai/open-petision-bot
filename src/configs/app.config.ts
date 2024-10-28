@@ -1,12 +1,11 @@
 const PORT = '3000';
 const HOST = '0.0.0.0';
-const SECRET = '4EfVKy5nXIXgD6fNk2ssIKy5nXIXgD6fNkfVKy5n';
 
 export default () => ({
   HOST: process.env.HOST || HOST,
   PORT: parseInt(process.env.PORT || PORT, 10),
   NODE_ENV: process.env.NODE_ENV || 'production',
-  SECRET: process.env.SECRET || SECRET,
+  SECRET: process.env.SECRET || null,
   DONATE: process.env.DONATE || null,
   MONGO_URI: process.env.MONGO_URI || null,
   BOT_TOKEN: process.env.BOT_TOKEN || null,
