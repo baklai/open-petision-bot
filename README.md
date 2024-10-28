@@ -17,7 +17,7 @@ npm install
 | `PORT`      | API Port (optional)                  |
 | `HOST`      | API Host (optional)                  |
 | `NODE_ENV`  | Operating mode (default: production) |
-| `SECRET`    | Secret key (optional)                |
+| `SECRET`    | Secret key                           |
 | `MONGO_URI` | Mongo connection string              |
 | `BOT_TOKEN` | Telegram bot token                   |
 | `WEB_HOOK`  | Telegram Web Hook URL (optional)     |

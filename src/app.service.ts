@@ -209,7 +209,7 @@ export class AppService {
       const secret = this.configService.get<string>('SECRET');
       ctx.session.secret = ctx.message.text;
 
-      if (ctx.session.secret === secret) {
+      if (secret && ctx.session.secret === secret) {
         const user = await this.userModel.findOneAndUpdate(
           { userID: ctx.userInfo.userID },
           { $set: { isAdmin: true } },
